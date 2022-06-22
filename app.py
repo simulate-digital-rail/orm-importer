@@ -1,5 +1,6 @@
 from flask import Flask, request
-from converter import run_converter
+
+import converter
 
 app = Flask(__name__)
 
@@ -9,7 +10,10 @@ def homepage():
 
 @app.route("/run/")
 def run_converter():
-    location = request.args.get('location')
-    if not location:
+    x1 = request.args.get('x1')
+    y1 = request.args.get('y1')
+    x2 = request.args.get('x2')
+    y2 = request.args.get('y2')
+    if not x1 or not x2 or not y1 or not y2:
         return 'No location specified', 400
-    run_converter(location)
+    converter.run_converter(x1, y1, x2, y2)
