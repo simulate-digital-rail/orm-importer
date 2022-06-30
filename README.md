@@ -8,4 +8,4 @@ This converter allows to query Open Railway Maps data and creates a XML File tha
 
 ## Running the Flask application
 1. Run `flask run`
-2. Use this request to query Bhf. Griebnitzsee `localhost:5000/run?x1=52.3955&y1=12.1231&x2=52.392&y2=13.1342`
+2. Use this request to query Bhf. Griebnitzsee `localhost:5000/run?x1=52.39503&y1=13.12242&x2=52.3933&y2=13.1421`

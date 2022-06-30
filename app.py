@@ -8,7 +8,7 @@ app = Flask(__name__)
 def homepage():
     return "<p>Welcome to the ORM - PlanPro Converter</p>"
 
-@app.route("/run/")
+@app.route("/run")
 def run_converter():
     x1 = request.args.get('x1')
     y1 = request.args.get('y1')
