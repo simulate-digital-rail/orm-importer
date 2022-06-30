@@ -1,3 +1,4 @@
+import subprocess
 import overpy
 
 def build_query(x1,y1,x2,y2):
@@ -30,7 +31,10 @@ def run_converter(x1, y1, x2, y2):
 
     return result_str
         
-
+def to_ppxml(x1, y1, x2, y2):
+    commands = run_converter(x1, y1, x2, y2)
+    ppg = subprocess.run(["java", "-jar", "ppg.jar", "--non-interactive"], input=commands.encode(), capture_output=True)
+    return ppg.stdout
 
 
     
