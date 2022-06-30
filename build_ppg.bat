@@ -3,6 +3,6 @@ if not exist planpro-generator\ (
 )
 cd planpro-generator
 git pull
-ant
+call ant
 
-copy ppg.jar ..
+copy ppg.jar ..\
