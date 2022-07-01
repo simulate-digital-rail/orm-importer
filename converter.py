@@ -13,10 +13,6 @@ def get_track_objects(bounding_box: BoundingBox):
     query = f'(way["railway"="rail"]({bounding_box});node(w););out body;'
     return query_old_api(query)
 
-def get_signals_objects(bounding_box: BoundingBox):
-    query = f'(way["railway"="signal"]({bounding_box});node(w););out body;'
-    return query_old_api(query)
-
 def query_old_api(query):
     result = api.query(query)
     return result
@@ -27,8 +23,15 @@ def dist_nodes(n1, n2):
     p2 = (n2.lat, n2.lon)
     return np.linalg.norm(p2-p1)
 
+def dist_edge(node_before, node_after, signal):
+    # Calculate distance from point(signal) to edge between node before and after
+    p1 = (node_before.lat, node_before.lon)
+    p2 = (node_after.lat, node_after.lon)
+    p3 = (signal.lat, signal.lon)
+    return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
+
 def make_signal_string(signal, node_before, node_after):
-    distance_side = dist_side(node_before, signal)
+    distance_side = dist_edge(node_before, signal)
     distance_node_before = dist_nodes(node_before, signal)
     kind = "andere"
     function = "andere"
@@ -36,17 +39,11 @@ def make_signal_string(signal, node_before, node_after):
     signal_str = f"signal signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}]\n"
     return signal_str
 
-
-def dist_side(node_before, node_after, signal):
-    # Calculate distance from point(signal) to edge between node before and after
-    p1 = (node_before.lat, node_before.lon)
-    p2 = (node_after.lat, node_after.lon)
-    p3 = (signal.lat, signal.lon)
-    return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
-
 def find_next_rail_node(index, way):
+    print(index, [(n.id, n.tags) for n in  way.nodes])
     for i in range(index, len(way.nodes)):
         if 'railway' in way.nodes[i].tags.keys() and way.nodes[i].tags['railway'] == 'rail':
+            print("found")
             return way.nodes[i]
     raise Exception("No rail node after signal was found")
 
