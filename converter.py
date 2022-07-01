@@ -1,11 +1,25 @@
+from dataclasses import dataclass
 import overpy
 
-def build_query(x1,y1,x2,y2):
-    x1,x2 = min(x1,x2), max(x1,x2)
-    y1,y2 = min(y1,y2), max(y1,y2)
-    query = f'(way["railway"="rail"]({x1},{y1},{x2},{y2});node(w););out body;'
-    print(query)
-    return query
+@dataclass
+class BoundingBox:
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+
+    def __repr__(self):
+        x1,x2 = min(self.x1,self.x2), max(self.x1,self.x2)
+        y1,y2 = min(self.y1,self.y2), max(self.y1,self.y2)
+        return f'{x1},{y1},{x2},{y2}'
+
+def get_track_objects(bounding_box: BoundingBox):
+    query = f'(way["railway"="rail"]({bounding_box});node(w););out body;'
+    return query_orm(query)
+
+def get_signal_objects(bounding_box: BoundingBox):
+    query = f'(node["railway"="signal"]({bounding_box}););out;'
+    return query_orm(query)
 
 def query_orm(query):
     api = overpy.Overpass()
@@ -13,14 +27,16 @@ def query_orm(query):
     return result
 
 def run_converter(x1, y1, x2, y2):
-    orm_objects = query_orm(build_query(x1,y1,x2,y2))
-    
+    bounding_box = BoundingBox(x1, y1, x2, y2)
+    track_objects = get_track_objects(bounding_box)
+    signal_objects = get_signal_objects(bounding_box)
+
     result_str = ""
 
-    for node in orm_objects.nodes:
+    for node in track_objects.nodes:
         result_str += f"node {node.id} {node.lat} {node.lon} description\n"
 
-    for way in orm_objects.ways:
+    for way in track_objects.ways:
         for idx, el in enumerate(way._node_ids):
             if idx==0:
                 continue
