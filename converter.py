@@ -147,11 +147,31 @@ def run_converter(x1, y1, x2, y2):
 
         # ToDo: generate nodes and edges for all switches in between first and last non_signal node on this way
 
-        # adapt this if there is a switch inbetween
-        if first_way_node and last_way_node:
-            top_edges.append((first_way_node, last_way_node))
+        try:
+            first_node_index = way.nodes.index(first_way_node)
+        except:
+            first_node_index = 1
+            
+        try:
+            last_node_index = way.nodes.index(last_way_node)
+        except:
+            last_node_index = -1
+        
+        connection_to_last_exists = False
+        for idx, node in enumerate(way.nodes[first_node_index:last_node_index]):
+            if is_switch(node):
+                if not node.id in top_nodes:
+                    top_nodes[node.id] = node
+                top_edges.append((way.nodes[first_node_index], node))
+                first_node_index = idx            
+                if node == last_way_node:
+                    connection_to_last_exists
+
+        if not connection_to_last_exists:
+            top_edges.append((way.nodes[first_node_index], last_way_node))
 
     # ToDo: generate geo nodes&edges
+    # ToDo: currently not handling case that way ends in a switch and that there is a way from this switch directly to another switch i think?
         
 
     for node in top_nodes:
