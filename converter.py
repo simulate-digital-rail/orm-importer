@@ -4,7 +4,7 @@ import overpy
 import networkx as nx
 
 from rail_types import BoundingBox
-from utils import is_signal, is_switch
+from utils import is_end_node, is_signal, is_switch
 api = overpy.Overpass()
 
 class ORMConverter:
@@ -58,17 +58,26 @@ class ORMConverter:
 
         return self._get_next_top_node(self, node_to, self.graph.edges[node_to], path)
 
+    def _add_geo_edges(self, path):
+        for idx, node in enumerate(path):
+            if idx == 0:
+                continue
+            self.geo_edges.append(path[idx - 1], node)
+        return 
+
     def run( self, x1, y1, x2, y2):
         bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(bounding_box)
-
+        # ToDo: Currently building a directed graph. Does this make sense based on the ORM data?
         self.graph = self._build_graph(track_objects)
 
+        # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
+        # Only nodes with max 1 edge or that are a switch can be top nodes
         for node in self.graph.nodes:
-            if (self.graph.degree(node) == 1 and not is_signal(node)) or is_switch(node):
+            if is_end_node(node) or is_switch(node):
                 self.top_nodes.append(node)
             elif not is_signal(node):
-                geo_nodes.append(node)
+                self.geo_nodes.append(node)
             else:
                 self.signals.append(node)
 
@@ -81,7 +90,7 @@ class ORMConverter:
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:
                     self.top_edges.append((node, next_top_node))
-                    geo_nodes, geo_edges = self._make_geo_objs(path)
+                    self._add_geo_edges(path)
 
         res = self._to_export_string()
         return res

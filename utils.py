@@ -13,6 +13,13 @@ def dist_edge(node_before, node_after, signal):
     p3 = np.array((signal.lat, signal.lon))
     return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
 
+def is_end_node(node, graph):
+    if is_signal(node):
+        return False
+    
+    if graph.degree(node) == 1 or graph.degree(node) == 0:
+        return True
+
 def is_signal(node):
     return is_x(node, 'signal')
 
