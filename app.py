@@ -1,6 +1,6 @@
 from flask import Flask, request
 
-import converter
+from converter import ORMConverter
 
 app = Flask(__name__)
 
@@ -16,4 +16,5 @@ def run_converter():
     y2 = request.args.get('y2')
     if not x1 or not x2 or not y1 or not y2:
         return 'No location specified', 400
-    return converter.run_converter(x1, y1, x2, y2), 200
+    conv = ORMConverter()
+    return conv.run(x1, y1, x2, y2), 200

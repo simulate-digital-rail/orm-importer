@@ -1,190 +1,92 @@
 from dataclasses import dataclass
+from typing import Any
 import overpy
-import numpy as np
+import networkx as nx
 
-from rail_types import BoundingBox, Signal
+from rail_types import BoundingBox
+from utils import is_signal, is_switch
 api = overpy.Overpass()
 
-def get_track_objects(bounding_box: BoundingBox):
-    query = f'(way["railway"="rail"]({bounding_box});node(w););out body;'
-    return query_old_api(query)
+class ORMConverter:
+    def __init__(self):
+        self.graph = None
+        self.top_nodes = []
+        self.top_edges = []
+        self.geo_nodes = []
+        self.geo_edges = []
+        self.signals = []
 
-def query_old_api(query):
-    result = api.query(query)
-    return result
+    def _get_track_objects(self, bounding_box: BoundingBox):
+        query = f'(way["railway"="rail"]({bounding_box});node(w););out body;'
+        return self.query_api(query)
 
-def dist_nodes(n1, n2):
-    # Calculate distance between two nodes
-    p1 = np.array((n1.lat, n1.lon))
-    p2 = np.array((n2.lat, n2.lon))
-    return np.linalg.norm(p2-p1)
+    def _query_api(self, query):
+        result = api.query(query)
+        return result
 
-def dist_edge(node_before, node_after, signal):
-    # Calculate distance from point(signal) to edge between node before and after
-    p1 = np.array((node_before.lat, node_before.lon))
-    p2 = np.array((node_after.lat, node_after.lon))
-    p3 = np.array((signal.lat, signal.lon))
-    return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
+    def _build_graph(self, track_objects):
+        G = nx.DiGraph()
+        for way in track_objects.ways:
+            for idx, node in enumerate(way.nodes):
+                G.add_node(node)
+                if idx != 0:
+                    G.add_edge(way.nodes[idx-1].id, node.id)
+        return G
 
-def make_signal_string(signal, node_before, node_after):
-    distance_side = dist_edge(node_before, node_after, signal)
-    distance_node_before = dist_nodes(node_before, signal)
-    kind = "andere"
-    function = "andere"
-    # ToDo extend arnes planpro generator to take dist_side as input, only then pos of signal is unambigous
-    signal_str = f"signal signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}]\n"
-    return signal_str
+    def _to_export_string(self):
+        result_str = ""
+        for node in self.top_nodes:
+            result_str += f"node {node.id} {node.lat} {node.lon} description\n"
 
-def find_next_rail_node(index, way):
-    # Not used anymore
-    print([{"id": n.id, "tags": n.tags} for n in way.nodes] )
-    for i in range(index, len(way.nodes)):
-        if 'railway' in way.nodes[i].tags.keys() and way.nodes[i].tags['railway'] == 'rail':
-            print("found")
-            return way.nodes[i]
-    raise Exception("No rail node after signal was found")
-
-def get_previous_non_signal_node(index, way):
-    for i in reversed(range(0, index)):
-        if 'railway' in way.nodes[i].tags.keys() and not way.nodes[i].tags['railway'] == 'signal':
-            return way.nodes[i]
-    print([{"id": n.id, "tags": n.tags} for n in way.nodes] )
-    raise Exception("No previous rail node was found")
-
-def get_next_non_signal_node(index, way):
-    for i in range(index + 1, len(way.nodes)):
-        if 'railway' in way.nodes[i].tags.keys() and not way.nodes[i].tags['railway'] == 'signal':
-            return way.nodes[i]
-    print([{"id": n.id, "tags": n.tags} for n in way.nodes] )
-    raise Exception("No next rail node was found")
-
-def is_signal(node):
-    return is_x(node, 'signal')
-
-def is_switch(node):
-    return is_x(node, 'switch')
-
-def is_x(node, x: str):
-    return 'railway' in node.tags.keys() and node.tags['railway'] == x
-
-def find_next_non_signal_on_way(way):
-    for node in way.nodes:
-        if not is_signal(node) and node != way.nodes[-1]:
-            return node
-    return None
-
-def find_previous_non_signal_on_way(way, first_node_on_way):
-    for node in reversed(way.nodes[:-1]):
-        if not is_signal(node) and node != first_node_on_way:
-            return node
-    return None
-
-def is_part_of_other_way(node, way_a, all_ways):
-    # assumption: node should be part of exactly 0 or 1 other ways if it is not a switch
-    for way_b in all_ways:
-        if way_b != way_a and node in way_b.nodes:
-            return True
-    return False
-
-def find_next_top_node(node, way_a, all_ways):
-    for way_b in all_ways:
-        if way_b != way_a and node in way_b.nodes:
-            last_node = way_b[-1]
-            if is_signal(last_node):
-                find_previous_non_signal_on_way(way_b, way_b[0])
-                if not is_part_of_other_way(last_node, way_b, all_ways) or  is_switch(last_node):
-                    return last_node
-                return find_next_top_node(last_node, way_b, all_ways)
-
-def find_first_non_signal_node(nodes):
-    for node in nodes:
-        if not is_signal(node):
-            return node
-
-def find_last_non_signal_node(nodes):
-    for node in reversed(nodes):
-        if not is_signal(node):
-            return node
-
-def run_converter(x1, y1, x2, y2):
-    bounding_box = BoundingBox(x1, y1, x2, y2)
-    track_objects = get_track_objects(bounding_box)
-
-    result_str = ""
-
-    # nodes for topologie
-    top_nodes = {}
-    top_edges = []
-
-    # Neuer pseudo code extrem unoptimiert und wird vermutlich duplikate enthalten
-    # Wollen über alle nodes die potentielle kandidaten für top_nodes sind iterieren
-    for way in track_objects.ways:
-        # Only the first and last non_signal nodes of a ORM way can be candidates for a PP node
-        # All nodes in between in a ORM way that are not switches can only be geo nodes
-        first_way_node = find_first_non_signal_node(way.nodes)
-         # ToDo: need to think about how to handle this case
-        if not first_way_node:
-            pass
-
-        # node will be added to topology if it is a switch or if it is a real beginning node
-        # ToDo: remove double call to find part of other way and to get that way
-        if is_part_of_other_way(first_way_node, way, track_objects.ways) or not is_switch(first_way_node):
-            first_way_node = find_next_top_node(first_way_node, way, track_objects.ways)
+        for edge in self.top_edges:
+                result_str += f"edge {edge[0].id} {edge[1].id}\n"
         
+        return result_str
 
-        last_way_node = find_last_non_signal_node(way.nodes)
-        if not last_way_node:
-            pass
+    def _get_next_top_node(self, node, out_edge: "tuple[Any, Any]", path):
+        node_to = out_edge[1]
+        if node_to in self.top_nodes:
+            return node_to
 
-        if is_part_of_other_way(last_way_node, way, track_objects.ways) or not is_switch(last_way_node):
-            last_way_node = find_next_top_node(last_way_node, way, track_objects.ways)
+        path.append(node)
 
-        # add first and last node to topology
-        if not first_way_node.id in top_nodes:
-            top_nodes[first_way_node.id] = node
-        if not last_way_node.id in top_nodes:
-                top_nodes[last_way_node.id] = node
-
-        # ToDo: generate nodes and edges for all switches in between first and last non_signal node on this way
-
-        try:
-            first_node_index = way.nodes.index(first_way_node)
-        except:
-            first_node_index = 1
-            
-        try:
-            last_node_index = way.nodes.index(last_way_node)
-        except:
-            last_node_index = -1
+        if self.graph.degree(node_to) == 0:
+            return None
         
-        connection_to_last_exists = False
-        for idx, node in enumerate(way.nodes[first_node_index:last_node_index]):
-            if is_switch(node):
-                if not node.id in top_nodes:
-                    top_nodes[node.id] = node
-                top_edges.append((way.nodes[first_node_index], node))
-                first_node_index = idx            
-                if node == last_way_node:
-                    connection_to_last_exists
+        if self.graph.degree(node_to) != 1:
+            raise Exception("Geo nodes should have only one out, otherwise we don't know where to go")
 
-        if not connection_to_last_exists:
-            top_edges.append((way.nodes[first_node_index], last_way_node))
+        return self._get_next_top_node(self, node_to, self.graph.edges[node_to], path)
 
-    # ToDo: generate geo nodes&edges
-    # ToDo: currently not handling case that way ends in a switch and that there is a way from this switch directly to another switch i think?
-        
+    def run( self, x1, y1, x2, y2):
+        bounding_box = BoundingBox(x1, y1, x2, y2)
+        track_objects = self._get_track_objects(bounding_box)
 
-    for node in top_nodes:
-        result_str += f"node {node.id} {node.lat} {node.lon} description\n"
+        self.graph = self._build_graph(track_objects)
 
-    for edge in top_edges:
-            result_str += f"edge {edge[0].id} {edge[1].id}\n"
-    
-    # ToDo add point objects (signals) and geoobjects to pp output
+        for node in self.graph.nodes:
+            if (self.graph.degree(node) == 1 and not is_signal(node)) or is_switch(node):
+                self.top_nodes.append(node)
+            elif not is_signal(node):
+                geo_nodes.append(node)
+            else:
+                self.signals.append(node)
 
-    return result_str
-        
+        # DFS-Like to create top and geo edges
+        for node in self.top_nodes:
+            if self.graph.degree(node) > 2:
+                raise Exception("Top nodes should have max two out edges (would be the case for a switch)")
+            for edge in self.graph.out_edges(node):
+                next_top_node, path = self._get_next_top_node(node, edge, [])
+                # Only add geo objects that are on the path between two top nodes
+                if next_top_node and next_top_node != node:
+                    self.top_edges.append((node, next_top_node))
+                    geo_nodes, geo_edges = self._make_geo_objs(path)
 
+        res = self._to_export_string()
+        return res
 
-
-    
+   
+if __name__ == '__main__':
+    conv = ORMConverter()
+    conv.run(x1=52.39503, y1=13.12242, x2=52.3933, y2=13.1421)
