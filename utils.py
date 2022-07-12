@@ -17,7 +17,7 @@ def is_end_node(node, graph):
     if is_signal(node):
         return False
     
-    if graph.degree(node) == 1 or graph.degree(node) == 0:
+    if graph.degree(node.id) == 1 or graph.degree(node.id) == 0:
         return True
 
 def is_signal(node):
