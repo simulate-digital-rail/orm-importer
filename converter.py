@@ -95,8 +95,6 @@ class ORMConverter:
 
         # DFS-Like to create top and geo edges
         for node in self.top_nodes:
-            if self.graph.degree(node.id) > 2:
-                raise Exception("Top nodes should have max two out edges (would be the case for a switch)")
             for edge in self.graph.edges(node.id):
                 next_top_node, path = self._get_next_top_node(node, edge, [])
                 # Only add geo objects that are on the path between two top nodes
