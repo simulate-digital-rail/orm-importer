@@ -3,4 +3,4 @@ overpy
 numpy
 networkx
 pytest
-pytest-mock
+mock
