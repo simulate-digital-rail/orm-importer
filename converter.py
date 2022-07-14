@@ -42,7 +42,6 @@ class ORMConverter:
             result_str += f"node {node.id} {node.lat} {node.lon} description\n"
 
         for edge in self.top_edges:
-                print(edge)
                 result_str += f"edge {edge[0].id} {edge[1].id}\n"
         
         return result_str
@@ -95,11 +94,12 @@ class ORMConverter:
                 next_top_node, path = self._get_next_top_node(node, edge, [])
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:
-                    self.top_edges.append((node, next_top_node))
-                    self._add_geo_edges(path)
+                    if not (next_top_node, node) in self.top_edges:
+                        self.top_edges.append((node, next_top_node))
+                        self._add_geo_edges(path)
 
-        print(self.top_nodes)
         res = self._to_export_string()
+        print(res)
         return res
 
    
