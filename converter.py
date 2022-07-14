@@ -58,11 +58,12 @@ class ORMConverter:
         if self.graph.degree(node_to_id) == 0:
             return None, path
 
-        next_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
-        if len(next_edges) != 1:
+        distinct_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
+        if len(distinct_edges) != 1:
             raise Exception(f"Node: {node_to_id}. \n Geo nodes should have only one other edge, otherwise we don't know where to go")
 
-        return self._get_next_top_node(node_to, next_edges[0], path)
+        next_edge = distinct_edges[0]
+        return self._get_next_top_node(node_to, next_edge, path)
 
     def _add_geo_edges(self, path):
         for idx, node_id in enumerate(path):
