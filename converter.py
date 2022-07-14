@@ -99,7 +99,6 @@ class ORMConverter:
                         self._add_geo_edges(path)
 
         res = self._to_export_string()
-        print(res)
         return res
 
    
