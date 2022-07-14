@@ -72,7 +72,7 @@ class ORMConverter:
             previous_node = self.node_data[path[idx - 1]]
             self.geo_edges.append((previous_node, node))
 
-    def run( self, x1, y1, x2, y2):
+    def run(self, x1, y1, x2, y2):
         bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(bounding_box)
         self.graph, self.node_data = self._build_graph(track_objects)
