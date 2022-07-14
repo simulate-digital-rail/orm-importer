@@ -42,7 +42,8 @@ class ORMConverter:
             result_str += f"node {node.id} {node.lat} {node.lon} description\n"
 
         for edge in self.top_edges:
-                result_str += f"edge {edge[0]} {edge[1]}\n"
+                print(edge)
+                result_str += f"edge {edge[0].id} {edge[1].id}\n"
         
         return result_str
 
@@ -74,13 +75,7 @@ class ORMConverter:
     def run( self, x1, y1, x2, y2):
         bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(bounding_box)
-        #for way in track_objects.ways:
-        #    for node in way.nodes:
-        #        if node.id == 27318375:
-        #            print(way)
-        # ToDo: Currently building a directed graph. Does this make sense based on the ORM data?
         self.graph, self.node_data = self._build_graph(track_objects)
-       # print(self.graph.edges(27318375))
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
         # Only nodes with max 1 edge or that are a switch can be top nodes
@@ -102,6 +97,7 @@ class ORMConverter:
                     self.top_edges.append((node, next_top_node))
                     self._add_geo_edges(path)
 
+        print(self.top_nodes)
         res = self._to_export_string()
         return res
 
