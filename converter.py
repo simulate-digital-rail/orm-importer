@@ -4,7 +4,7 @@ import overpy
 import networkx as nx
 
 from rail_types import BoundingBox
-from utils import is_end_node, is_signal, is_switch
+from utils import is_end_node, is_same_edge, is_signal, is_switch
 
 class ORMConverter:
     def __init__(self):
@@ -26,7 +26,7 @@ class ORMConverter:
         return result
 
     def _build_graph(self, track_objects):
-        G = nx.DiGraph()
+        G = nx.Graph()
         node_data = {}
         for way in track_objects.ways:
             for idx, node in enumerate(way.nodes):
@@ -46,24 +46,22 @@ class ORMConverter:
         
         return result_str
 
-    def _get_next_top_node(self, node, out_edge: "tuple[str, str]", path):
-        node_to_id = out_edge[1]
+    def _get_next_top_node(self, node, edge: "tuple[str, str]", path):
+        node_to_id = edge[1]
         node_to = self.node_data[node_to_id]
         if node_to in self.top_nodes:
-            return node_to
+            return node_to, path
 
         path.append(node_to_id)
 
         if self.graph.degree(node_to_id) == 0:
-            return None
-        
-        if self.graph.degree(node_to_id) != 1:
-            print(type(self.graph.out_edges[node_to_id]))
-            #print([f"In: {edge[0]}, {edge[1]}" for edge in self.graph.in_edges[node_to_id]])
-            print([f"Out: {edge[0]}, {edge[1]}" for edge in self.graph.out_edges[node_to_id]])
-            raise Exception(f"Node: {node_to_id}. \n Geo nodes should have only one out, otherwise we don't know where to go")
+            return None, path
 
-        return self._get_next_top_node(self, node_to, self.graph.edges[node_to_id][0], path)
+        next_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
+        if len(next_edges) != 1:
+            raise Exception(f"Node: {node_to_id}. \n Geo nodes should have only one other edge, otherwise we don't know where to go")
+
+        return self._get_next_top_node(node_to, next_edges[0], path)
 
     def _add_geo_edges(self, path):
         for idx, node_id in enumerate(path):
@@ -71,13 +69,18 @@ class ORMConverter:
                 continue
             node = self.node_data[node_id]   
             previous_node = self.node_data[path[idx - 1]]
-            self.geo_edges.append(previous_node, node)
+            self.geo_edges.append((previous_node, node))
 
     def run( self, x1, y1, x2, y2):
         bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(bounding_box)
+        #for way in track_objects.ways:
+        #    for node in way.nodes:
+        #        if node.id == 27318375:
+        #            print(way)
         # ToDo: Currently building a directed graph. Does this make sense based on the ORM data?
         self.graph, self.node_data = self._build_graph(track_objects)
+       # print(self.graph.edges(27318375))
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
         # Only nodes with max 1 edge or that are a switch can be top nodes
@@ -94,8 +97,7 @@ class ORMConverter:
         for node in self.top_nodes:
             if self.graph.degree(node.id) > 2:
                 raise Exception("Top nodes should have max two out edges (would be the case for a switch)")
-            for edge in self.graph.out_edges(node.id):
-                print(edge)
+            for edge in self.graph.edges(node.id):
                 next_top_node, path = self._get_next_top_node(node, edge, [])
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:

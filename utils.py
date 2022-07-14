@@ -37,3 +37,10 @@ def make_signal_string(signal, node_before, node_after):
     # ToDo extend arnes planpro generator to take dist_side as input, only then pos of signal is unambigous
     signal_str = f"signal signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}]\n"
     return signal_str
+
+def is_same_edge(e1: tuple, e2: tuple):
+    if e1 == e2:
+        return True
+    if e1[0] == e2[1] and e1[1] == e2[0]:
+        return True
+    return False
