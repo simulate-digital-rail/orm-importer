@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template, url_for
 
 from converter import ORMConverter
 
@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def homepage():
+    return render_template('index.html', css_file=url_for('static', filename='pico.min.css'))
     return "<p>Welcome to the ORM - PlanPro Converter</p>"
 
 @app.route("/run")
