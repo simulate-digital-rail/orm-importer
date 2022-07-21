@@ -89,7 +89,7 @@ class ORMConverter:
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]  
             if is_signal(node):
-                signal = {node: node, top_edge: top_edge}
+                signal = Signal(node, top_edge)
                 self.signals.append(signal)
 
     def run(self, x1, y1, x2, y2):
@@ -101,7 +101,6 @@ class ORMConverter:
         # Only nodes with max 1 edge or that are a switch can be top nodes
         for node_id in self.graph.nodes:
             node = self.node_data[node_id]
-            print(type(node))
             if is_end_node(node, self.graph) or is_switch(node):
                 self.top_nodes.append(node)
             elif not is_signal(node):
@@ -120,6 +119,7 @@ class ORMConverter:
                         self._add_signals(path, new_top_edge)
 
         res = self._to_export_string(include_geo_data=False)
+        print(res)
         return res
 
    
