@@ -1,5 +1,7 @@
 import numpy as np
 
+from rail_types import Signal
+
 def dist_nodes(n1, n2):
     # Calculate distance between two nodes
     p1 = np.array((n1.lat, n1.lon))
@@ -29,13 +31,14 @@ def is_switch(node):
 def is_x(node, x: str):
     return 'railway' in node.tags.keys() and node.tags['railway'] == x
 
-def make_signal_string(signal, node_before, node_after):
+def make_signal_string(signal: Signal):
+    node_before, node_after = signal.edge
     distance_side = dist_edge(node_before, node_after, signal)
     distance_node_before = dist_nodes(node_before, signal)
     kind = "andere"
     function = "andere"
     # ToDo extend arnes planpro generator to take dist_side as input, only then pos of signal is unambigous
-    signal_str = f"signal signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}]\n"
+    signal_str = f"signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}]\n"
     return signal_str
 
 def is_same_edge(e1: tuple, e2: tuple):
