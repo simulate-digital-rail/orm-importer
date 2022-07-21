@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from overpy import Node
 
 @dataclass
 class BoundingBox:
@@ -14,8 +15,5 @@ class BoundingBox:
 
 @dataclass
 class Signal:
-    start_node_id: int
-    node_id: int
-    pos_x: float
-    pos_y: float
-    general: dict
+    node: Node
+    edge: "tuple[Node, Node]"

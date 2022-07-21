@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
+from overpy import Node
 import overpy
 import networkx as nx
 
@@ -9,12 +10,12 @@ from utils import is_end_node, is_same_edge, is_signal, is_switch
 class ORMConverter:
     def __init__(self):
         self.graph = None
-        self.top_nodes = []
-        self.top_edges = []
-        self.geo_node_ids = []
-        self.geo_edges = []
-        self.signals = []
-        self.node_data = {}
+        self.top_nodes : list[Node] = []
+        self.top_edges : list[tuple[Node, Node]] = []
+        self.geo_nodes : list[Node]= []
+        self.geo_edges : list[tuple[Node, Node]]= []
+        self.signals : list[Signal]= []
+        self.node_data : dict[str, Node]= {}
         self.api = overpy.Overpass()
 
     def _get_track_objects(self, bounding_box: BoundingBox):
@@ -65,12 +66,21 @@ class ORMConverter:
         return self._get_next_top_node(node_to, next_edge, path)
 
     def _add_geo_edges(self, path):
+        previous_idx = 0
         for idx, node_id in enumerate(path):
-            if idx == 0:
-                continue
             node = self.node_data[node_id]   
-            previous_node = self.node_data[path[idx - 1]]
+            if idx == 0 or is_signal(node):
+                continue
+            previous_node = self.node_data[path[previous_idx]]
             self.geo_edges.append((previous_node, node))
+            previous_idx = idx
+
+    def _add_signals(self, path, top_edge):
+        for idx, node_id in enumerate(path):
+            node = self.node_data[node_id]  
+            if is_signal(node):
+                signal = {node: node, top_edge: top_edge}
+                self.signals.append(signal)
 
     def run(self, x1, y1, x2, y2):
         bounding_box = BoundingBox(x1, y1, x2, y2)
@@ -81,12 +91,11 @@ class ORMConverter:
         # Only nodes with max 1 edge or that are a switch can be top nodes
         for node_id in self.graph.nodes:
             node = self.node_data[node_id]
+            print(type(node))
             if is_end_node(node, self.graph) or is_switch(node):
                 self.top_nodes.append(node)
             elif not is_signal(node):
-                self.geo_node_ids.append(node)
-            else:
-                self.signals.append(node)
+                self.geo_nodes.append(node)
 
         # DFS-Like to create top and geo edges
         for node in self.top_nodes:
@@ -95,8 +104,10 @@ class ORMConverter:
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:
                     if not (next_top_node, node) in self.top_edges:
-                        self.top_edges.append((node, next_top_node))
+                        new_top_edge = (node, next_top_node)
+                        self.top_edges.append(new_top_edge)
                         self._add_geo_edges(path)
+                        self._add_signals(path, new_top_edge)
 
         res = self._to_export_string()
         return res
