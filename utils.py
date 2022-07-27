@@ -16,11 +16,12 @@ def dist_edge(node_before, node_after, signal):
     return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
 
 def is_end_node(node, graph):
-    if is_signal(node):
-        return False
-    
+    # identify end nodes first, as a signal might also be an end node respective to the bounding box
     if graph.degree(node.id) == 1 or graph.degree(node.id) == 0:
         return True
+
+    if is_signal(node):
+        return False
 
 def is_signal(node):
     return is_x(node, 'signal')
