@@ -1,0 +1,3 @@
+[submodule "planpro-generator"]
+	path = planpro-generator
+	url = https://github.com/arneboockmeyer/planpro-generator.git
