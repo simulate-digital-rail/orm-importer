@@ -1,6 +1,10 @@
+from platform import node
 import numpy as np
+from planprogenerator.model.node import Node as Gen_Node
+from planprogenerator.model.edge import Edge as Gen_Edge
 
 from rail_types import Signal
+from overpy import Node
 
 def dist_nodes(n1, n2):
     # Calculate distance between two nodes
@@ -34,12 +38,8 @@ def is_x(node, x: str):
 
 def make_signal_string(signal: Signal):
     node_before, node_after = signal.edge
-    distance_side = dist_edge(node_before, node_after, signal.node)
-    distance_node_before = dist_nodes(node_before, signal.node)
-    kind = "andere"
-    function = "andere"
     # ToDo extend arnes planpro generator to take dist_side as input, only then pos of signal is unambigous
-    signal_str = f"signal {node_before.id} {node_after.id} {distance_node_before} {function} {kind}\n"
+    signal_str = f"signal {node_before.id} {node_after.id} {signal.distance_node_before} {signal.function} {signal.kind}\n"
     return signal_str
 
 def is_same_edge(e1: tuple, e2: tuple):
@@ -48,3 +48,15 @@ def is_same_edge(e1: tuple, e2: tuple):
     if e1[0] == e2[1] and e1[1] == e2[0]:
         return True
     return False
+
+def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_nodes: "list[Gen_Node]"):
+    node_a: Gen_Node = [n for n in gen_nodes if n.identifier == edge[0].id]
+    node_b: Gen_Node = [n for n in gen_nodes if n.identifier == edge[1].id]
+    if not node_a or not node_b:
+        raise Exception("Edge that does not have top nodes, found")
+    node_a = node_a[0]
+    node_b = node_b[0]
+    for gen_edge in gen_edges:
+        if gen_edge.node_a == node_a and gen_edge.node_b == node_b:
+            return gen_edge
+    raise Exception("No generator edge found for converter edge")
