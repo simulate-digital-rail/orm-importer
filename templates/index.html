@@ -4,12 +4,21 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="{{ css_file }}">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+        integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+        crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+        crossorigin=""></script>
         <title>ORM-PlanPro-Converter</title>
     </head>
     <body>
         <main class="container">
             <h2>Welcome to the ORM - PlanPro Converter</h2>
-
+            <div id="map", style="height: 30em;"></div>
+            <div class="grid">
+                <div></div>
+            </div>
             <form action="/run" method="get">
                 <div class="grid">
                     <label for="x1">
@@ -34,5 +43,41 @@
                 <button type="submit">Submit</button>
             </form>
         </main>
+
+        <script>
+            var map = L.map('map').setView([52.3942847, 13.1282920], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            var latlngs = [[52.39503, 13.12242], [52.3933, 13.12242],[52.3933, 13.1421],[52.39503, 13.1421]];
+            var polygon = L.polygon(latlngs, {color: "#ff7800", weight: 1}).addTo(map);
+            
+            polygon.on({
+                mousedown: function () {
+                    map.on('mousemove', function (e) {
+                        var minVal = Infinity;
+                        var minEl = 0;
+
+                        latlngs.forEach((x,i) => {
+                            var distance = Math.sqrt((e.latlng[0] - x[0])**2 + (e.latlng[1] - x[1])**2);
+                            if (distance < minVal) {
+                                minVal = distance;
+                                minEl = i;
+                            }
+                        })
+
+                        latlngs[minEl] = e.latlng;
+                        polygon.s
+                        
+                        polygon.setLatLngs(latlngs);
+                    });
+                }
+            }); 
+            map.on('mouseup',function(e){
+                map.removeEventListener('mousemove');
+            })
+        </script>
     </body>
 </html>
