@@ -60,3 +60,10 @@ def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_
         if gen_edge.node_a == node_a and gen_edge.node_b == node_b:
             return gen_edge
     raise Exception("No generator edge found for converter edge")
+
+def getSignalDirection(direction: str):
+    if direction == "forward":
+        return "in"
+    if direction == "backward":
+        return "gegen"
+    raise Exception("Unknown signal direction encountered")

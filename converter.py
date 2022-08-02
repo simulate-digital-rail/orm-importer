@@ -6,7 +6,7 @@ import networkx as nx
 from planprogenerator.generator import Generator
 
 from rail_types import BoundingBox, Signal
-from utils import dist_edge, dist_nodes, get_export_edge, is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
+from utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
 
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
@@ -104,7 +104,8 @@ class ORMConverter:
                 distance_node_before = dist_nodes(node_before, node)
                 kind = "andere"
                 function = "andere"
-                signal = Signal(node, top_edge, distance_side, distance_node_before, kind, function)
+                direction = getSignalDirection(node.tags["railway:signal:direction"])
+                signal = Signal(node, top_edge, distance_side, distance_node_before, kind, function, direction)
                 self.signals.append(signal)
 
     def _to_export_format(self):
@@ -129,7 +130,7 @@ class ORMConverter:
 
         for signal in self.signals:
             export_edge = get_export_edge(signal.edge, export_edges, export_nodes)
-            export_signal = Gen_Signal(export_edge, signal.distance_side, "forward", signal.function, signal.kind)
+            export_signal = Gen_Signal(export_edge, signal.distance_side, signal.direction, signal.function, signal.kind)
             export_signals.append(export_signal)
         return export_nodes, export_edges, export_signals
 

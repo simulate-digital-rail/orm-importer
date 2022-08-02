@@ -21,3 +21,4 @@ class Signal:
     distance_node_before: float
     kind: str
     function: str
+    direction: str
