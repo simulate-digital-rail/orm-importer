@@ -4,7 +4,7 @@ from overpy import Node
 import overpy
 import networkx as nx
 
-from rail_types import BoundingBox, Signal
+from rail_types import Signal
 from utils import is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
 
 class ORMConverter:
@@ -98,7 +98,6 @@ class ORMConverter:
                 self.signals.append(signal)
 
     def run(self, polygon):
-        #bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(polygon)
         self.graph = self._build_graph(track_objects)
 
