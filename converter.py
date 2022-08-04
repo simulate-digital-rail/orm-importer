@@ -19,7 +19,7 @@ class ORMConverter:
         self.api = overpy.Overpass()
 
     def _get_track_objects(self, polygon: str):
-        query = f'(way["railway"="rail"](poly: "{polygon}");node(w););out body;'
+        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
         return self._query_api(query)
 
     def _query_api(self, query):
@@ -28,14 +28,19 @@ class ORMConverter:
 
     def _build_graph(self, track_objects):
         G = nx.Graph()
-        node_data = {}
         for way in track_objects.ways:
-            for idx, node in enumerate(way.nodes):
-                G.add_node(node.id)
-                node_data[node.id] = node
-                if idx != 0:
-                    G.add_edge(way.nodes[idx-1].id, node.id)
-        return G, node_data
+            previous_node = None
+            for idx, node_id in enumerate(way._node_ids):
+                try:
+                    node = track_objects.get_node(node_id)
+                    self.node_data[node_id] = node
+                    G.add_node(node.id)
+                    if previous_node:
+                        G.add_edge(previous_node.id, node.id)
+                    previous_node = node
+                except overpy.exception.DataIncomplete:
+                    continue
+        return G
 
     def _to_export_string(self, include_geo_data=False):
         result_str = ""
@@ -95,7 +100,7 @@ class ORMConverter:
     def run(self, polygon):
         #bounding_box = BoundingBox(x1, y1, x2, y2)
         track_objects = self._get_track_objects(polygon)
-        self.graph, self.node_data = self._build_graph(track_objects)
+        self.graph = self._build_graph(track_objects)
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
         # Only nodes with max 1 edge or that are a switch can be top nodes
