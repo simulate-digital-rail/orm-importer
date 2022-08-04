@@ -4,35 +4,70 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="{{ css_file }}">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+        integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+        crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+        crossorigin=""></script>
         <title>ORM-PlanPro-Converter</title>
     </head>
     <body>
         <main class="container">
             <h2>Welcome to the ORM - PlanPro Converter</h2>
-
+            <div id="map", style="height: 30em;"></div>
+            <div class="grid">
+                <div></div>
+            </div>
             <form action="/run" method="get">
-                <div class="grid">
-                    <label for="x1">
-                        x1
-                        <input type="text" id="x1" name="x1" value="52.39503" required>
-                    </label>
-                    <label for="y1">
-                        y1
-                        <input type="text" id="y1" name="y1" value="13.12242" required>
-                    </label>
-                </div>
-                <div class="grid">
-                    <label for="x2">
-                        x2
-                        <input type="text" id="x2" name="x2" value="52.3933" required>
-                    </label>
-                    <label for="y2">
-                        y2
-                        <input type="text" id="y2" name="y2" value="13.1421" required>
-                    </label>
-                </div>
-                <button type="submit">Submit</button>
+                <label for="polygon">
+                    Surrounding Polygon
+                    <input type="text" id="polygon" name="polygon" value="[]" required>
+                </label>
+                <button id="submit_button" type="submit">Submit</button>
             </form>
         </main>
+
+        <script>
+            var map = L.map('map').setView([52.3942847, 13.1282920], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenRailwayMap'
+            }).addTo(map);
+
+            var points = [];
+            var polygon = L.polygon([]).addTo(map);
+
+            function updatePoints() {
+                const point_array = points.map(p => p.getLatLng())
+                polygon.setLatLngs(points.map(p => p.getLatLng()));
+                document.getElementById("polygon").value = points.map(p => + p.getLatLng().lat + " " + p.getLatLng().lng).join(" ");
+            }
+
+            map.on('click', function(e) {
+                var marker = L.marker(e.latlng, {draggable: true}).addTo(map)
+                marker.on('move', function(e) {
+                    updatePoints();
+                });
+
+                marker.on('click', function(e) {
+                    const point_index = points.indexOf(marker);
+                    points.splice(point_index, 1)
+                    marker.remove();
+                    updatePoints();
+                });
+                points.push(marker)
+                updatePoints();
+            });
+
+            map.on('mouseup',function(e){
+                map.removeEventListener('mousemove');
+            })
+        </script>
     </body>
 </html>

@@ -4,7 +4,7 @@ from overpy import Node
 import overpy
 import networkx as nx
 
-from rail_types import BoundingBox, Signal
+from rail_types import Signal
 from utils import is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
 
 class ORMConverter:
@@ -18,8 +18,8 @@ class ORMConverter:
         self.node_data : dict[str, Node]= {}
         self.api = overpy.Overpass()
 
-    def _get_track_objects(self, bounding_box: BoundingBox):
-        query = f'(way["railway"="rail"]({bounding_box});node(w)({bounding_box}););out body;'
+    def _get_track_objects(self, polygon: str):
+        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
         return self._query_api(query)
 
     def _query_api(self, query):
@@ -97,9 +97,8 @@ class ORMConverter:
                 signal = Signal(node, top_edge)
                 self.signals.append(signal)
 
-    def run(self, x1, y1, x2, y2):
-        bounding_box = BoundingBox(x1, y1, x2, y2)
-        track_objects = self._get_track_objects(bounding_box)
+    def run(self, polygon):
+        track_objects = self._get_track_objects(polygon)
         self.graph = self._build_graph(track_objects)
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
@@ -130,4 +129,4 @@ class ORMConverter:
    
 if __name__ == '__main__':
     conv = ORMConverter()
-    conv.run(x1=52.39503, y1=13.12242, x2=52.3933, y2=13.1421)
+    conv.run("52.394471570989126 13.12194585800171 52.3955583542288 13.133854866027834 52.39436681938324 13.134176731109621 52.39326691251008 13.122761249542238")

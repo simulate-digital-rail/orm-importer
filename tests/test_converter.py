@@ -11,6 +11,6 @@ def test_query_griebnitzsee(mock_converter):
         raise Exception("Test could not be run, since data was not loaded correctly")
     mock_converter()._get_track_objects.return_value = query_data
     converter = ORMConverter()
-    res = converter.run(x1=52.39503, y1=13.12242, x2=52.3933, y2=13.1421)
+    res = converter.run("52.394471570989126 13.12194585800171 52.3955583542288 13.133854866027834 52.39436681938324 13.134176731109621 52.39326691251008 13.122761249542238")
     assert 'node' in res
     assert 'edge' in res
