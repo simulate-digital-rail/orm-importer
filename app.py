@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def homepage():
-    return render_template('index.html', css_file=url_for('static', filename='pico.min.css'))
+    return render_template('index.html', css_file=url_for('static', filename='pico.min.css'), axios_file=url_for('static', filename='axios.min.js'), modal_file=url_for('static', filename='modal.js'))
     return "<p>Welcome to the ORM - PlanPro Converter</p>"
 
 @app.route("/run")
