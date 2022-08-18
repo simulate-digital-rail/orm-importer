@@ -10,6 +10,8 @@
         <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
         integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
         crossorigin=""></script>
+        <script src="{{ axios_file }}"></script>
+        <script src="{{ modal_file }}"></script>
         <title>ORM-PlanPro-Converter</title>
     </head>
     <body>
@@ -19,13 +21,24 @@
             <div class="grid">
                 <div></div>
             </div>
-            <form action="/run" method="get">
+            <form>
                 <label for="polygon">
                     Surrounding Polygon
-                    <input type="text" id="polygon" name="polygon" value="[]" required>
+                    <input type="text" id="polygon" name="polygon" value="" required>
                 </label>
-                <button id="submit_button" type="submit">Submit</button>
+                <button id="submit_button" type="button">Submit</button>
             </form>
+            <textarea id="result_area" rows="20" hidden="true" readonly></textarea>
+
+            <dialog id="error_modal">
+                <article>
+                    <h3>Error</h3>
+                    <p id="error_message"></p>
+                    <footer>
+                        <a href="#confirm" role="button" data-target="error_modal" onClick="toggleModal(event)">Confirm</a>
+                    </footer>
+                </article>
+            </dialog>
         </main>
 
         <script>
@@ -68,6 +81,26 @@
             map.on('mouseup',function(e){
                 map.removeEventListener('mousemove');
             })
+
+
+            document.getElementById("submit_button").onclick = function() {
+
+                document.getElementById("submit_button").setAttribute("aria-busy", "true");;
+                document.getElementById("result_area").hidden = true;
+ 
+                axios.get("/run", {params : {polygon : document.getElementById("polygon").value}})
+                    .then(response => {
+                        document.getElementById("result_area").value = response.data;
+                        document.getElementById("result_area").hidden = false;
+                        document.getElementById("submit_button").setAttribute("aria-busy", "false");;
+                    })
+                    .catch(error => {
+                        document.getElementById("error_message").textContent = error.message;
+                        console.log(error)
+                        document.getElementById("submit_button").setAttribute("aria-busy", "false");;
+                        openModal(document.getElementById("error_modal"));
+                    });
+                }
         </script>
     </body>
 </html>
