@@ -19,3 +19,8 @@ pytest==7.1.2
 tomli==2.0.1
 Werkzeug==2.1.2
 zipp==3.8.1
+git+https://github.com/rohansaw/planpro-generator.git@main
+git+https://github.com/arneboockmeyer/planpro-python-model
+git+https://github.com/arneboockmeyer/railway-route-generator
+six
+lxml
