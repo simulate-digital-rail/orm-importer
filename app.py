@@ -16,3 +16,6 @@ def run_converter():
         return 'No location specified', 400
     conv = ORMConverter()
     return conv.run(polygon), 200
+
+if __name__ == "__main__":
+    app.run(debug=True)

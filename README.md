@@ -10,8 +10,9 @@ This converter allows to query Open Railway Maps data and creates a XML File tha
 6. Run `pip install .`
 
 ## Running the Flask application
-1. Run `flask run`
-2. Use this request to query Bhf. Griebnitzsee `localhost:5000/run?x1=52.39503&y1=13.12242&x2=52.3933&y2=13.1421`
+1. Run `python3 app.py`
+2. Open the url that is display ("Running on http://...")
+3. Select coordinates and run
 
 ## Live Version
 The main branch is automatically deployed to https://orm-planpro-converter.herokuapp.com/
