@@ -5,13 +5,12 @@ import overpy
 import networkx as nx
 from planprogenerator.generator import Generator
 
-from .rail_types import BoundingBox, Signal
+from .rail_types import Signal
 from .utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
 
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
 from planprogenerator.model.node import Node as Gen_Node
-
 class ORMConverter:
     def __init__(self):
         self.graph = None
@@ -23,8 +22,8 @@ class ORMConverter:
         self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
 
-    def _get_track_objects(self, bounding_box: BoundingBox):
-        query = f'(way["railway"="rail"]({bounding_box});node(w)({bounding_box}););out body;'
+    def _get_track_objects(self, polygon: str):
+        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
         return self._query_api(query)
 
     def _query_api(self, query):
@@ -64,7 +63,6 @@ class ORMConverter:
             for edge in self.geo_edges:
                 result_str += f"geo_edge {edge[0].id} {edge[1].id}\n"
 
-        
         return result_str
 
     def _get_next_top_node(self, node, edge: "tuple[str, str]", path):
@@ -135,9 +133,8 @@ class ORMConverter:
         return export_nodes, export_edges, export_signals
 
 
-    def run(self, x1, y1, x2, y2):
-        bounding_box = BoundingBox(x1, y1, x2, y2)
-        track_objects = self._get_track_objects(bounding_box)
+    def run(self, polygon):
+        track_objects = self._get_track_objects(polygon)
         self.graph = self._build_graph(track_objects)
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
@@ -167,6 +164,7 @@ class ORMConverter:
         gen.generate(n, e, s, "out")
         return gen.generate(n, e, s)
    
+   
 if __name__ == '__main__':
     conv = ORMConverter()
-    conv.run(x1=52.39503, y1=13.12242, x2=52.3933, y2=13.1421)
+    conv.run("52.394471570989126 13.12194585800171 52.3955583542288 13.133854866027834 52.39436681938324 13.134176731109621 52.39326691251008 13.122761249542238")
