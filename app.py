@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, url_for
 
-from .converter import ORMConverter
+from converter import ORMConverter
 
 app = Flask(__name__)
 
