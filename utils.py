@@ -1,10 +1,12 @@
 from platform import node
+from decimal import Decimal
 import numpy as np
 from planprogenerator.model.node import Node as Gen_Node
 from planprogenerator.model.edge import Edge as Gen_Edge
 
 from rail_types import Signal
 from overpy import Node
+
 
 def dist_nodes(n1, n2):
     # Calculate distance between two nodes
@@ -35,12 +37,6 @@ def is_switch(node):
 
 def is_x(node, x: str):
     return 'railway' in node.tags.keys() and node.tags['railway'] == x
-
-def make_signal_string(signal: Signal):
-    node_before, node_after = signal.edge
-    # ToDo extend arnes planpro generator to take dist_side as input, only then pos of signal is unambigous
-    signal_str = f"signal {node_before.id} {node_after.id} {signal.distance_node_before} {signal.function} {signal.kind}\n"
-    return signal_str
 
 def is_same_edge(e1: tuple, e2: tuple):
     if e1 == e2:

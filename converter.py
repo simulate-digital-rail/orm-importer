@@ -6,11 +6,12 @@ import networkx as nx
 from planprogenerator.generator import Generator
 
 from rail_types import Signal
-from utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
+from utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, make_signal_string, to_DBref
 
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
 from planprogenerator.model.node import Node as Gen_Node
+from planprogenerator.utils import Config
 class ORMConverter:
     def __init__(self):
         self.graph = None
@@ -45,25 +46,6 @@ class ORMConverter:
                 except overpy.exception.DataIncomplete:
                     continue
         return G
-
-    def _to_export_string(self, include_geo_data=False):
-        result_str = ""
-        for node in self.top_nodes:
-            result_str += f"node {node.id} {node.lat} {node.lon} description\n"
-
-        for edge in self.top_edges:
-                result_str += f"edge {edge[0].id} {edge[1].id}\n"
-
-        for signal in self.signals:
-            result_str += make_signal_string(signal)
-
-        if include_geo_data:
-            for node in self.geo_nodes:
-                result_str += f"geo_node {node.id} {node.lat} {node.lon} description\n"
-            for edge in self.geo_edges:
-                result_str += f"geo_edge {edge[0].id} {edge[1].id}\n"
-
-        return result_str
 
     def _get_next_top_node(self, node, edge: "tuple[str, str]", path):
         node_to_id = edge[1]
@@ -111,7 +93,9 @@ class ORMConverter:
         export_edges: list[Gen_Edge] = []
         export_signals: list[Gen_Signal] = []
         for node in self.top_nodes:
-            export_node = Gen_Node(node.id, node.lat, node.lon, "Mock Data - Fill me pls")
+            #lat, lon = to_DBref(node.lat, node.lon)
+            lat, lon = node.lat, node.lon
+            export_node = Gen_Node(node.id, lat, lon, "Mock Data - Fill me pls")
             export_nodes.append(export_node)
 
         for edge in self.top_edges:
@@ -128,7 +112,7 @@ class ORMConverter:
 
         for signal in self.signals:
             export_edge = get_export_edge(signal.edge, export_edges, export_nodes)
-            export_signal = Gen_Signal(export_edge, signal.distance_side, signal.direction, signal.function, signal.kind)
+            export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind)
             export_signals.append(export_signal)
         return export_nodes, export_edges, export_signals
 
@@ -161,8 +145,9 @@ class ORMConverter:
         n, e, s = self._to_export_format()
 
         gen = Generator()
-        gen.generate(n, e, s, "out")
-        return gen.generate(n, e, s)
+        config = Config(author_name='DRSS-2022', organisation='OSM.HPI', coord_representation='wgs84')
+        gen.generate(n, e, s, config, "out")
+        return gen.generate(n, e, s, config)
    
    
 if __name__ == '__main__':
