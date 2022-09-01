@@ -22,16 +22,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-    - name: Clone Generator Repo
-      uses: actions/checkout@v3
-      with:
-        repository: rohansaw/planpro-generator
-        ref: provide-as-python-module
-    - name: Install Generator as package
-        working-directory: ./planpro-generator
-        run: |
-          python -m pip install --upgrade pip
-          pip install .
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
