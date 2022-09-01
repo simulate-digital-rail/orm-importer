@@ -6,20 +6,22 @@ from planprogenerator.model.edge import Edge as Gen_Edge
 
 from rail_types import Signal
 from overpy import Node
+from haversine import haversine
 
 
 def dist_nodes(n1, n2):
     # Calculate distance between two nodes
-    p1 = np.array((n1.lat, n1.lon))
-    p2 = np.array((n2.lat, n2.lon))
-    return np.linalg.norm(p2-p1)
+    p1 = (n1.lat, n1.lon)
+    p2 = (n2.lat, n2.lon)
+    return haversine(p1, p2)
 
 def dist_edge(node_before, node_after, signal):
     # Calculate distance from point(signal) to edge between node before and after
+    # TODO: Validate that this is really correct!
     p1 = np.array((node_before.lat, node_before.lon))
     p2 = np.array((node_after.lat, node_after.lon))
     p3 = np.array((signal.lat, signal.lon))
-    return np.abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1)
+    return np.abs(np.cross(p2-p1, p1-p3)) / Decimal(haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon)))
 
 def is_end_node(node, graph):
     # identify end nodes first, as a signal might also be an end node respective to the bounding box

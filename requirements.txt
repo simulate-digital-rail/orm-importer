@@ -24,3 +24,4 @@ git+https://github.com/arneboockmeyer/planpro-python-model
 git+https://github.com/arneboockmeyer/railway-route-generator
 six
 lxml
+haversine
