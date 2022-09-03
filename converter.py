@@ -1,21 +1,26 @@
 from dataclasses import dataclass
 from typing import Any
-from overpy import Node
+from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
+from planprogenerator.generator import Generator
 
 from rail_types import Signal
-from utils import is_end_node, is_same_edge, is_signal, is_switch, make_signal_string
+from utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch
 
+from planprogenerator.model.signal import Signal as Gen_Signal
+from planprogenerator.model.edge import Edge as Gen_Edge
+from planprogenerator.model.node import Node as Gen_Node
+from planprogenerator.utils import Config
 class ORMConverter:
     def __init__(self):
         self.graph = None
-        self.top_nodes : list[Node] = []
-        self.top_edges : list[tuple[Node, Node]] = []
-        self.geo_nodes : list[Node]= []
-        self.geo_edges : list[tuple[Node, Node]]= []
+        self.top_nodes : list[OverpyNode] = []
+        self.top_edges : list[tuple[OverpyNode, OverpyNode]] = []
+        self.geo_nodes : list[OverpyNode]= []
+        self.geo_edges : list[tuple[OverpyNode, OverpyNode]]= []
         self.signals : list[Signal]= []
-        self.node_data : dict[str, Node]= {}
+        self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
 
     def _get_track_objects(self, polygon: str):
@@ -41,26 +46,6 @@ class ORMConverter:
                 except overpy.exception.DataIncomplete:
                     continue
         return G
-
-    def _to_export_string(self, include_geo_data=False):
-        result_str = ""
-        for node in self.top_nodes:
-            result_str += f"node {node.id} {node.lat} {node.lon} description\n"
-
-        for edge in self.top_edges:
-                result_str += f"edge {edge[0].id} {edge[1].id}\n"
-
-        for signal in self.signals:
-            result_str += make_signal_string(signal)
-
-        if include_geo_data:
-            for node in self.geo_nodes:
-                result_str += f"geo_node {node.id} {node.lat} {node.lon} description\n"
-            for edge in self.geo_edges:
-                result_str += f"geo_edge {edge[0].id} {edge[1].id}\n"
-
-        
-        return result_str
 
     def _get_next_top_node(self, node, edge: "tuple[str, str]", path):
         node_to_id = edge[1]
@@ -94,8 +79,45 @@ class ORMConverter:
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]  
             if is_signal(node):
-                signal = Signal(node, top_edge)
+                node_before, node_after = top_edge
+                distance_side = dist_edge(node_before, node_after, node)
+                distance_node_before = dist_nodes(node_before, node)
+                kind = "andere"
+                function = "andere"
+                direction = getSignalDirection(node.tags["railway:signal:direction"])
+                signal = Signal(node, top_edge, distance_side, distance_node_before, kind, function, direction)
                 self.signals.append(signal)
+
+    def _to_export_format(self):
+        export_nodes: list[Gen_Node] = []
+        export_edges: list[Gen_Edge] = []
+        export_signals: list[Gen_Signal] = []
+        for node in self.top_nodes:
+            #lat, lon = to_DBref(node.lat, node.lon)
+            lat, lon = node.lat, node.lon
+            export_node = Gen_Node(node.id, lat, lon, "Mock Data - Fill me pls")
+            export_nodes.append(export_node)
+
+        for edge in self.top_edges:
+            node_a: Gen_Node = [n for n in export_nodes if n.identifier == edge[0].id]
+            node_b: Gen_Node = [n for n in export_nodes if n.identifier == edge[1].id]
+            if not node_a or not node_b:
+                raise Exception("Edge that does not have top nodes, found")
+            node_a = node_a[0]
+            node_b = node_b[0]
+            node_a.connected_nodes.append(node_b)
+            node_b.connected_nodes.append(node_a)
+            export_edge = Gen_Edge(node_a, node_b)
+            export_edges.append(export_edge)
+
+        for signal in self.signals:
+            export_edge = get_export_edge(signal.edge, export_edges, export_nodes)
+            # Currently not using signal.distance_side, since it is to small
+            # Probably because in ORM signals are node of the way, therefore only minimal distance to edge
+            export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind)
+            export_signals.append(export_signal)
+        return export_nodes, export_edges, export_signals
+
 
     def run(self, polygon):
         track_objects = self._get_track_objects(polygon)
@@ -122,10 +144,13 @@ class ORMConverter:
                         self._add_geo_edges(path)
                         self._add_signals(path, new_top_edge)
 
-        res = self._to_export_string(include_geo_data=False)
-        print(res)
-        return res
+        n, e, s = self._to_export_format()
 
+        gen = Generator()
+        config = Config(author_name='DRSS-2022', organisation='OSM.HPI', coord_representation='wgs84')
+        gen.generate(n, e, s, config, "out")
+        return gen.generate(n, e, s, config)
+   
    
 if __name__ == '__main__':
     conv = ORMConverter()

@@ -5,3 +5,8 @@ from overpy import Node
 class Signal:
     node: Node
     edge: "tuple[Node, Node]"
+    distance_side: float
+    distance_node_before: float
+    kind: str
+    function: str
+    direction: str
