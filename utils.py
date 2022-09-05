@@ -1,5 +1,6 @@
 from platform import node
 from decimal import Decimal
+from typing import List
 import numpy as np
 from planprogenerator.model.node import Node as Gen_Node
 from planprogenerator.model.edge import Edge as Gen_Edge
@@ -65,3 +66,40 @@ def getSignalDirection(direction: str):
     if direction == "backward":
         return "gegen"
     raise Exception("Unknown signal direction encountered")
+
+def get_opposite_edge_pairs(edges: List[Gen_Edge]):
+    if len(edges) != 4:
+        raise Exception("Opposite edge pairs can only be identified for a list of 4 edged. Only " +  str(len(edges)) + " edges given")
+    node_map = []
+    for e in edges:
+        if e.node_a != node:
+            node_map.append((e.node_a, e))
+        else:
+            node_map.append((e.node_b, e))
+
+    node_map.sort(key=lambda t: t[0].x)
+    top_left = max(node_map[:2], key=lambda t: t[0].y)[1]
+    bottom_left = min(node_map[:2], key=lambda t: t[0].y)[1]
+    top_right = max(node_map[2:], key=lambda t: t[0].y)[1]
+    bottom_right = min(node_map[2:], key=lambda t: t[0].y)[1]
+
+    return (top_left, bottom_right), (bottom_left, top_right)
+            
+    
+def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
+    if e1.node_a == node_to_remove:
+        if e2.node_a == node_to_remove:
+            return Gen_Edge(e1.node_b, e2.node_b)
+        if e2.node_b == node_to_remove:
+            return Gen_Edge(e1.node_b, e2.node_a)
+        else:
+            raise Exception("Could not merge edges")
+    if e1.node_b == node_to_remove:
+        if e2.node_a == node_to_remove:
+            return Gen_Edge(e1.node_a, e2.node_b)
+        if e2.node_b == node_to_remove:
+            return Gen_Edge(e1.node_a, e2.node_a)
+        else:
+            raise Exception("Could not merge edges")
+    else:
+        raise Exception("Could not merge edges")

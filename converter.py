@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from typing import Any
+import uuid
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
 from planprogenerator.generator import Generator
 
 from rail_types import Signal
-from utils import dist_edge, dist_nodes, get_export_edge, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch
+from utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
 
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
@@ -18,7 +19,7 @@ class ORMConverter:
         self.top_nodes : list[OverpyNode] = []
         self.top_edges : list[tuple[OverpyNode, OverpyNode]] = []
         self.geo_nodes : list[OverpyNode]= []
-        self.geo_edges : list[tuple[OverpyNode, OverpyNode]]= []
+        self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
         self.signals : list[Signal]= []
         self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
@@ -65,14 +66,14 @@ class ORMConverter:
         next_edge = distinct_edges[0]
         return self._get_next_top_node(node_to, next_edge, path)
 
-    def _add_geo_edges(self, path):
+    def _add_geo_edges(self, path, top_edge):
         previous_idx = 0
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]   
             if idx == 0 or is_signal(node):
                 continue
             previous_node = self.node_data[path[previous_idx]]
-            self.geo_edges.append((previous_node, node))
+            self.geo_edges.append((previous_node, node, top_edge))
             previous_idx = idx
 
     def _add_signals(self, path, top_edge):
@@ -92,11 +93,12 @@ class ORMConverter:
         export_nodes: list[Gen_Node] = []
         export_edges: list[Gen_Edge] = []
         export_signals: list[Gen_Signal] = []
+        count = 0
         for node in self.top_nodes:
-            #lat, lon = to_DBref(node.lat, node.lon)
             lat, lon = node.lat, node.lon
             export_node = Gen_Node(node.id, lat, lon, "Mock Data - Fill me pls")
             export_nodes.append(export_node)
+
 
         for edge in self.top_edges:
             node_a: Gen_Node = [n for n in export_nodes if n.identifier == edge[0].id]
@@ -116,6 +118,24 @@ class ORMConverter:
             # Probably because in ORM signals are node of the way, therefore only minimal distance to edge
             export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind)
             export_signals.append(export_signal)
+
+        # check for crossing-switches
+        for node in export_nodes:
+            if len(node.connected_nodes) == 4:
+                # identfy all 4 edges and merge
+                connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
+                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges)
+
+                export_edges.append(merge_edges(*edge_pair_1, node))
+                export_edges.append(merge_edges(*edge_pair_2, node))
+                for e in connected_edges:
+                    export_edges.remove(e)
+                # create new top nodes - split newly created merged edges by inserting a top node each
+                # todo if we want an actual switch here
+                # delete crossing node
+                for connected_node in node.connected_nodes:
+                    connected_node.connected_nodes.remove(node)
+                export_nodes.remove(node)
         return export_nodes, export_edges, export_signals
 
 
@@ -141,7 +161,7 @@ class ORMConverter:
                     if not (next_top_node, node) in self.top_edges:
                         new_top_edge = (node, next_top_node)
                         self.top_edges.append(new_top_edge)
-                        self._add_geo_edges(path)
+                        self._add_geo_edges(path, new_top_edge)
                         self._add_signals(path, new_top_edge)
 
         n, e, s = self._to_export_format()
