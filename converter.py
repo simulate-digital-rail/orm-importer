@@ -12,6 +12,7 @@ from utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pair
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
 from planprogenerator.model.node import Node as Gen_Node
+from planprogenerator.model.geonode import GeoNode as Gen_GeoNode
 from planprogenerator.utils import Config
 class ORMConverter:
     def __init__(self):
@@ -114,7 +115,7 @@ class ORMConverter:
 
         for signal in self.signals:
             export_edge = get_export_edge(signal.edge, export_edges, export_nodes)
-            # Currently not using signal.distance_side, since it is to small
+            # ToDo: Currently not using signal.distance_side, since it is to small
             # Probably because in ORM signals are node of the way, therefore only minimal distance to edge
             export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind)
             export_signals.append(export_signal)
@@ -136,6 +137,12 @@ class ORMConverter:
                 for connected_node in node.connected_nodes:
                     connected_node.connected_nodes.remove(node)
                 export_nodes.remove(node)
+
+        for geo_edge in self.geo_edges:
+            top_edge = get_export_edge(geo_edge[2], export_edges, export_nodes)
+            geo_node = Gen_GeoNode(geo_edge[1].lat, geo_edge[1].lon)
+            top_edge.intermediate_geo_nodes.append(geo_node)
+
         return export_nodes, export_edges, export_signals
 
 
