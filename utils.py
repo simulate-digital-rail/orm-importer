@@ -77,11 +77,11 @@ def get_opposite_edge_pairs(edges: List[Gen_Edge]):
         else:
             node_map.append((e.node_b, e))
 
-    node_map.sort(key=lambda t: t[0].x)
-    top_left = max(node_map[:2], key=lambda t: t[0].y)[1]
-    bottom_left = min(node_map[:2], key=lambda t: t[0].y)[1]
-    top_right = max(node_map[2:], key=lambda t: t[0].y)[1]
-    bottom_right = min(node_map[2:], key=lambda t: t[0].y)[1]
+    node_map.sort(key=lambda t: t[0].geo_node.x)
+    top_left = max(node_map[:2], key=lambda t: t[0].geo_node.y)[1]
+    bottom_left = min(node_map[:2], key=lambda t: t[0].geo_node.y)[1]
+    top_right = max(node_map[2:], key=lambda t: t[0].geo_node.y)[1]
+    bottom_right = min(node_map[2:], key=lambda t: t[0].geo_node.y)[1]
 
     return (top_left, bottom_right), (bottom_left, top_right)
             
