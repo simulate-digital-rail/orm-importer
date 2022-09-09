@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Tuple
 import uuid
 from overpy import Node as OverpyNode
 import overpy
@@ -104,7 +104,7 @@ class ORMConverter:
         for edge in self.top_edges:
             node_a: Gen_Node = [n for n in export_nodes if n.identifier == edge[0].id]
             node_b: Gen_Node = [n for n in export_nodes if n.identifier == edge[1].id]
-            if not node_a or not node_b:
+            if len(node_a) != 1 or len(node_b) != 1:
                 raise Exception("Edge that does not have top nodes, found")
             node_a = node_a[0]
             node_b = node_b[0]
@@ -120,28 +120,49 @@ class ORMConverter:
             export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind)
             export_signals.append(export_signal)
 
-        # check for crossing-switches
+        replaced_edges = {}
+        replaced_n = {}
+
         for node in export_nodes:
+            # check for crossing-switches
             if len(node.connected_nodes) == 4:
                 # identfy all 4 edges and merge
                 connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
                 edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges)
 
-                export_edges.append(merge_edges(*edge_pair_1, node))
-                export_edges.append(merge_edges(*edge_pair_2, node))
+                new_edge_1 = merge_edges(*edge_pair_1, node)
+                new_edge_2 = merge_edges(*edge_pair_2, node)
+                export_edges.append(new_edge_1)
+                export_edges.append(new_edge_2)
                 for e in connected_edges:
                     export_edges.remove(e)
                 # create new top nodes - split newly created merged edges by inserting a top node each
                 # todo if we want an actual switch here
                 # delete crossing node
-                for connected_node in node.connected_nodes:
-                    connected_node.connected_nodes.remove(node)
+                export_nodes.remove(node)
+
+            # checking for switches with missing connection
+            if len(node.connected_nodes) == 2:
+                connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
+                new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+                export_edges.append(new_edge)
+                replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
+                replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
+                for e in connected_edges:
+                    export_edges.remove(e)
                 export_nodes.remove(node)
 
         for geo_edge in self.geo_edges:
-            top_edge = get_export_edge(geo_edge[2], export_edges, export_nodes)
+            top_edge: Tuple[OverpyNode, OverpyNode] = geo_edge[2]
+            # check if top_edge that the geo edge is associated with still exists, if not find the replaced edge
+            if (top_edge[0].id, top_edge[1].id) in replaced_edges.keys():
+                export_top_edge = replaced_edges[(top_edge[0].id, top_edge[1].id)]
+            elif (top_edge[1].id, top_edge[0].id) in replaced_edges.keys():
+                export_top_edge = replaced_edges[(top_edge[1].id, top_edge[0].id)]
+            else:
+                export_top_edge = get_export_edge(top_edge, export_edges, export_nodes)
             geo_node = Gen_GeoNode(geo_edge[1].lat, geo_edge[1].lon)
-            top_edge.intermediate_geo_nodes.append(geo_node)
+            export_top_edge.intermediate_geo_nodes.append(geo_node)
 
         return export_nodes, export_edges, export_signals
 

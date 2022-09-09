@@ -52,6 +52,7 @@ def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_
     node_a: Gen_Node = [n for n in gen_nodes if n.identifier == edge[0].id]
     node_b: Gen_Node = [n for n in gen_nodes if n.identifier == edge[1].id]
     if not node_a or not node_b:
+        print(edge)
         raise Exception("Edge that does not have top nodes, found")
     node_a = node_a[0]
     node_b = node_b[0]
@@ -87,19 +88,10 @@ def get_opposite_edge_pairs(edges: List[Gen_Edge]):
             
     
 def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
-    if e1.node_a == node_to_remove:
-        if e2.node_a == node_to_remove:
-            return Gen_Edge(e1.node_b, e2.node_b)
-        if e2.node_b == node_to_remove:
-            return Gen_Edge(e1.node_b, e2.node_a)
-        else:
-            raise Exception("Could not merge edges")
-    if e1.node_b == node_to_remove:
-        if e2.node_a == node_to_remove:
-            return Gen_Edge(e1.node_a, e2.node_b)
-        if e2.node_b == node_to_remove:
-            return Gen_Edge(e1.node_a, e2.node_a)
-        else:
-            raise Exception("Could not merge edges")
-    else:
-        raise Exception("Could not merge edges")
+    first_node = e1.node_a if e1.node_b == node_to_remove else e1.node_b
+    second_node = e2.node_a if e2.node_b == node_to_remove else e2.node_b
+    first_node.connected_nodes.remove(node_to_remove)
+    first_node.connected_nodes.append(second_node)
+    second_node.connected_nodes.remove(node_to_remove)
+    second_node.connected_nodes.append(first_node)
+    return Gen_Edge(first_node, second_node)
