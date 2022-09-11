@@ -68,12 +68,12 @@ def getSignalDirection(direction: str):
         return "gegen"
     raise Exception("Unknown signal direction encountered")
 
-def get_opposite_edge_pairs(edges: List[Gen_Edge]):
+def get_opposite_edge_pairs(edges: List[Gen_Edge], node_to_remove: Gen_Node):
     if len(edges) != 4:
         raise Exception("Opposite edge pairs can only be identified for a list of 4 edged. Only " +  str(len(edges)) + " edges given")
     node_map = []
     for e in edges:
-        if e.node_a != node:
+        if e.node_a != node_to_remove:
             node_map.append((e.node_a, e))
         else:
             node_map.append((e.node_b, e))
@@ -88,6 +88,9 @@ def get_opposite_edge_pairs(edges: List[Gen_Edge]):
             
     
 def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
+    print(node_to_remove.identifier)
+    print(str(e1.node_a.identifier) + " " + str(e1.node_b.identifier))
+    print(str(e2.node_a.identifier) + " " + str(e2.node_b.identifier))
     first_node = e1.node_a if e1.node_b == node_to_remove else e1.node_b
     second_node = e2.node_a if e2.node_b == node_to_remove else e2.node_b
     first_node.connected_nodes.remove(node_to_remove)

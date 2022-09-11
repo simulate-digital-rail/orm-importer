@@ -128,10 +128,15 @@ class ORMConverter:
             if len(node.connected_nodes) == 4:
                 # identfy all 4 edges and merge
                 connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
-                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges)
-
+                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
                 new_edge_1 = merge_edges(*edge_pair_1, node)
                 new_edge_2 = merge_edges(*edge_pair_2, node)
+
+                # ToDo add to mapping which actual nodes were replaced
+                '''replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
+                replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
+                replaced_edges[(node.connected_nodes[2].identifier, node.identifier)] = new_edge
+                replaced_edges[(node.connected_nodes[3].identifier, node.identifier)] = new_edge'''
                 export_edges.append(new_edge_1)
                 export_edges.append(new_edge_2)
                 for e in connected_edges:
