@@ -7,7 +7,7 @@ import networkx as nx
 from planprogenerator.generator import Generator
 
 from rail_types import Signal
-from utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
+from utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
 
 from planprogenerator.model.signal import Signal as Gen_Signal
 from planprogenerator.model.edge import Edge as Gen_Edge
@@ -84,8 +84,8 @@ class ORMConverter:
                 node_before, node_after = top_edge
                 distance_side = dist_edge(node_before, node_after, node)
                 distance_node_before = dist_nodes(node_before, node)
-                kind = "andere"
-                function = "andere"
+                kind = get_signal_kind(node)
+                function = get_signal_function(node)
                 direction = getSignalDirection(node.tags["railway:signal:direction"])
                 signal = Signal(node, top_edge, distance_side, distance_node_before, kind, function, direction)
                 self.signals.append(signal)

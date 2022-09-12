@@ -98,3 +98,44 @@ def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
     second_node.connected_nodes.remove(node_to_remove)
     second_node.connected_nodes.append(first_node)
     return Gen_Edge(first_node, second_node)
+
+def get_signal_function(signal: Node) -> str:
+    if not signal.tags['railway'] == 'signal':
+        raise Exception('Expected signal node')
+    try:
+        tag = next(t for t in signal.tags.keys() if t.endswith(':function'))
+        if signal.tags[tag] == 'entry':
+            return 'Einfahr_Signal'
+        elif signal.tags[tag] == 'exit':
+            return 'Ausfahr_Signal'
+        else:
+            return 'andere'
+    except StopIteration:
+        return 'andere'
+
+
+def get_signal_kind(signal: Node) -> str:
+    if not signal.tags['railway'] == 'signal':
+        raise Exception('Expected signal node')
+    # ORM Reference: https://wiki.openstreetmap.org/wiki/OpenRailwayMap/Tagging/Signal
+    if 'railway:signal:main' in signal.tags.keys():
+        return 'Hauptsignal'
+    elif 'railway:signal:distant' in signal.tags.keys():
+        return 'Vorsignal'
+    elif 'railway:signal:combined' in signal.tags.keys():
+        return 'Mehrabschnittssignal'
+    elif 'railway:signal:shunting' in signal.tags.keys():
+        return 'Sperrsignal'
+    elif 'railway:signal:main' in signal.tags.keys() and 'railway:signal:minor' in signal.tags.keys():
+        return 'Hauptsperrsignal'
+    # Names in comment are not yet supported by PlanPro generator
+    elif 'railway:signal:main_repeated' in signal.tags.keys():
+        return 'andere'  # 'Vorsignalwiederholer'
+    elif 'railway:signal:minor' in signal.tags.keys():
+        return 'andere'  # 'Zugdeckungssignal'
+    elif 'railway:signal:crossing' in signal.tags.keys():
+        return 'andere'  # 'Überwachungssignal'
+    elif 'railway:signal:combined' in signal.tags.keys() and 'railway:signal:minor' in signal.tags.keys():
+        return 'andere'  # 'Mehrabschnittssperrsignal'
+    else:
+        return 'andere'
