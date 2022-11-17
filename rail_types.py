@@ -10,3 +10,4 @@ class Signal:
     kind: str
     function: str
     direction: str
+    element_name: str

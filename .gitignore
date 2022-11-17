@@ -130,3 +130,5 @@ dmypy.json
 
 # Test data
 out.ppxml
+
+.idea/
