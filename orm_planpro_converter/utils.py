@@ -5,7 +5,6 @@ import numpy as np
 from planprogenerator.model.node import Node as Gen_Node
 from planprogenerator.model.edge import Edge as Gen_Edge
 
-from rail_types import Signal
 from overpy import Node
 from haversine import haversine
 
