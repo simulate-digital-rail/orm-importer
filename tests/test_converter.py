@@ -1,5 +1,5 @@
 from mock import patch
-from converter import ORMConverter
+from orm_planpro_converter.converter import ORMConverter
 import pickle
 
 @patch("converter.ORMConverter")
