@@ -1,8 +1,8 @@
 from mock import patch
-from converter import ORMConverter
+from orm_planpro_converter.converter import ORMConverter
 import pickle
 
-@patch("converter.ORMConverter")
+@patch("orm_planpro_converter.converter.ORMConverter")
 def test_query_griebnitzsee(mock_converter):
     query_data = None
     with open("tests/mock_data/griebnitzsee_req.txt","rb") as f:
