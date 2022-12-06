@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "orm-planpro-converter"
-version = "0.1.0"
-description = "This tool converts data from OpenRailwayMap into the PlanPro format."
+name = "orm-importer"
+version = "1.0.0"
+description = "This tool converts data from OpenRailwayMap into yaramo models."
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "orm_planpro_converter"}]
+packages = [{include = "orm_importer"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 attrs = "21.4.0"
 click = "8.1.3"
 flask = "2.1.3"
@@ -30,11 +30,10 @@ pytest = "7.1.2"
 tomli = "2.0.1"
 werkzeug = "2.1.2"
 zipp = "3.8.1"
-planprogenerator = {git = "https://github.com/rohansaw/planpro-generator.git", rev = "main"}
-railway-route-generator = {git = "https://github.com/arneboockmeyer/railway-route-generator"}
 six = "^1.16.0"
-lxml = "^4.9.0"
+#lxml = "^4.9.0"
 haversine = "^2.7.0"
+yaramo = {git = "https://github.com/simulate-digital-rail/yaramo"}
 
 
 

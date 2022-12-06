@@ -2,16 +2,11 @@ from typing import Tuple
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
-from planprogenerator.generator import Generator
+from yaramo import model
+from yaramo.topology import Topology
 
-from orm_planpro_converter.rail_types import Signal
-from orm_planpro_converter.utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
-
-from planprogenerator.model.signal import Signal as Gen_Signal
-from planprogenerator.model.edge import Edge as Gen_Edge
-from planprogenerator.model.node import Node as Gen_Node
-from planprogenerator.model.geonode import GeoNode as Gen_GeoNode
-from planprogenerator.utils import Config
+from orm_importer.rail_types import Signal
+from orm_importer.utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
 
 
 class ORMConverter:
@@ -24,6 +19,7 @@ class ORMConverter:
         self.signals : list[Signal]= []
         self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
+        self.topology = Topology()
 
     def _get_track_objects(self, polygon: str):
         query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
@@ -67,68 +63,75 @@ class ORMConverter:
         next_edge = distinct_edges[0]
         return self._get_next_top_node(node_to, next_edge, path)
 
-    def _add_geo_edges(self, path, top_edge):
+    def _add_geo_edges(self, path, start_node, end_node):
         previous_idx = 0
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]   
             if idx == 0 or is_signal(node):
                 continue
             previous_node = self.node_data[path[previous_idx]]
-            self.geo_edges.append((previous_node, node, top_edge))
+            self.geo_edges.append((previous_node, node, (start_node, end_node)))
             previous_idx = idx
 
-    def _add_signals(self, path, top_edge):
+    def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]  
             if is_signal(node):
-                node_before, node_after = top_edge
-                distance_side = dist_edge(node_before, node_after, node)
-                distance_node_before = dist_nodes(node_before, node)
-                kind = get_signal_kind(node)
-                function = get_signal_function(node)
-                direction = getSignalDirection(node.tags["railway:signal:direction"])
-                element_name = node.tags.get("ref", node_id)
-                signal = Signal(node, top_edge, distance_side, distance_node_before, kind, function, direction, element_name=element_name)
-                self.signals.append(signal)
+                signal = model.Signal(
+                    edge=edge,
+                    distance_previous_node=dist_nodes(node_before, node),
+                    distance_side=dist_edge(node_before, node_after, node),
+                    direction=getSignalDirection(node.tags["railway:signal:direction"]),
+                    function=get_signal_function(node) ,
+                    kind=get_signal_kind(node),
+                    name=node.tags.get("ref", node_id)
+                )
+                self.topology.add_signal(signal)
 
-    def _to_export_format(self):
-        export_nodes: list[Gen_Node] = []
-        export_edges: list[Gen_Edge] = []
-        export_signals: list[Gen_Signal] = []
-        count = 0
+
+    def run(self, polygon):
+        track_objects = self._get_track_objects(polygon)
+        self.graph = self._build_graph(track_objects)
+
+        # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
+        # Only nodes with max 1 edge or that are a switch can be top nodes
+        for node_id in self.graph.nodes:
+            node = self.node_data[node_id]
+            if is_end_node(node, self.graph) or is_switch(node):
+                self.top_nodes.append(node)
+            elif not is_signal(node):
+                self.geo_nodes.append(node)
+
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
-            export_node = Gen_Node(node.id, lat, lon, "Mock Data - Fill me pls")
-            export_nodes.append(export_node)
+            export_node = model.Node(name=node.id)
+            self.topology.add_node(export_node)
 
 
-        for edge in self.top_edges:
-            node_a: Gen_Node = [n for n in export_nodes if n.identifier == edge[0].id]
-            node_b: Gen_Node = [n for n in export_nodes if n.identifier == edge[1].id]
-            if len(node_a) != 1 or len(node_b) != 1:
-                raise Exception("Edge that does not have top nodes, found")
-            node_a = node_a[0]
-            node_b = node_b[0]
-            node_a.connected_nodes.append(node_b)
-            node_b.connected_nodes.append(node_a)
-            export_edge = Gen_Edge(node_a, node_b)
-            export_edges.append(export_edge)
+        # DFS-Like to create top and geo edges
+        for node in self.top_nodes:
+            for edge in self.graph.edges(node.id):
+                next_top_node, path = self._get_next_top_node(node, edge, [])
+                # Only add geo objects that are on the path between two top nodes
+                if next_top_node and next_top_node != node:
+                    node_a = next((n for n in self.topology.nodes.values() if n.name == node), None)
+                    node_b = next((n for n in self.topology.nodes.values() if n.name == next_top_node), None)
+                    if (node_a and node_b) and not self.topology.get_edge_by_nodes(node_a, node_b):
+                        current_edge = model.Edge(node_a, node_b)
+                        self.topology.add_edge(current_edge)
+                        self._add_geo_edges(path, node, next_top_node)
+                        self._add_signals(path, edge, node, next_top_node)
 
-        for signal in self.signals:
-            export_edge = get_export_edge(signal.edge, export_edges, export_nodes)
-            # ToDo: Currently not using signal.distance_side, since it is to small
-            # Probably because in ORM signals are node of the way, therefore only minimal distance to edge
-            export_signal = Gen_Signal(export_edge, signal.distance_node_before, signal.direction, signal.function, signal.kind, element_name=signal.element_name)
-            export_signals.append(export_signal)
+        count = 0
 
         replaced_edges = {}
         replaced_n = {}
 
-        for node in export_nodes:
+        for node in self.topology.nodes.values():
             # check for crossing-switches
             if len(node.connected_nodes) == 4:
                 # identfy all 4 edges and merge
-                connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
+                connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
                 edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
                 new_edge_1 = merge_edges(*edge_pair_1, node)
                 new_edge_2 = merge_edges(*edge_pair_2, node)
@@ -166,44 +169,11 @@ class ORMConverter:
             elif (top_edge[1].id, top_edge[0].id) in replaced_edges.keys():
                 export_top_edge = replaced_edges[(top_edge[1].id, top_edge[0].id)]
             else:
-                export_top_edge = get_export_edge(top_edge, export_edges, export_nodes)
-            geo_node = Gen_GeoNode(geo_edge[1].lat, geo_edge[1].lon)
+                export_top_edge = get_export_edge(top_edge, self.topology.edges.values(), self.topology.nodes.values())
+            geo_node = model.GeoNode(geo_edge[1].lat, geo_edge[1].lon)
             export_top_edge.intermediate_geo_nodes.append(geo_node)
 
-        return export_nodes, export_edges, export_signals
-
-
-    def run(self, polygon):
-        track_objects = self._get_track_objects(polygon)
-        self.graph = self._build_graph(track_objects)
-
-        # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
-        # Only nodes with max 1 edge or that are a switch can be top nodes
-        for node_id in self.graph.nodes:
-            node = self.node_data[node_id]
-            if is_end_node(node, self.graph) or is_switch(node):
-                self.top_nodes.append(node)
-            elif not is_signal(node):
-                self.geo_nodes.append(node)
-
-        # DFS-Like to create top and geo edges
-        for node in self.top_nodes:
-            for edge in self.graph.edges(node.id):
-                next_top_node, path = self._get_next_top_node(node, edge, [])
-                # Only add geo objects that are on the path between two top nodes
-                if next_top_node and next_top_node != node:
-                    if not (next_top_node, node) in self.top_edges:
-                        new_top_edge = (node, next_top_node)
-                        self.top_edges.append(new_top_edge)
-                        self._add_geo_edges(path, new_top_edge)
-                        self._add_signals(path, new_top_edge)
-
-        n, e, s = self._to_export_format()
-
-        gen = Generator()
-        config = Config(author_name='DRSS-2022', organisation='OSM.HPI', coord_representation='wgs84')
-        gen.generate(n, e, s, config, "out")
-        return gen.generate(n, e, s, config)
+        return self.topology
    
    
 if __name__ == '__main__':

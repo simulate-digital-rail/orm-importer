@@ -2,11 +2,10 @@ from platform import node
 from decimal import Decimal
 from typing import List
 import numpy as np
-from planprogenerator.model.node import Node as Gen_Node
-from planprogenerator.model.edge import Edge as Gen_Edge
 
 from overpy import Node
 from haversine import haversine
+from yaramo import model
 
 
 def dist_nodes(n1, n2):
@@ -47,14 +46,12 @@ def is_same_edge(e1: tuple, e2: tuple):
         return True
     return False
 
+
 def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_nodes: "list[Gen_Node]"):
-    node_a: Gen_Node = [n for n in gen_nodes if n.identifier == edge[0].id]
-    node_b: Gen_Node = [n for n in gen_nodes if n.identifier == edge[1].id]
-    if not node_a or not node_b:
-        print(edge)
-        raise Exception("Edge that does not have top nodes, found")
-    node_a = node_a[0]
-    node_b = node_b[0]
+    node_a = next((n for n in gen_nodes if n.name == edge[0].id), None)
+    node_b = next((n for n in gen_nodes if n.name == edge[1].id), None)
+    if node_a is None or node_b is None:
+        raise Exception("Edge without top nodes found")
     for gen_edge in gen_edges:
         if gen_edge.node_a == node_a and gen_edge.node_b == node_b:
             return gen_edge
@@ -67,7 +64,7 @@ def getSignalDirection(direction: str):
         return "gegen"
     raise Exception("Unknown signal direction encountered")
 
-def get_opposite_edge_pairs(edges: List[Gen_Edge], node_to_remove: Gen_Node):
+def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node):
     if len(edges) != 4:
         raise Exception("Opposite edge pairs can only be identified for a list of 4 edged. Only " +  str(len(edges)) + " edges given")
     node_map = []
@@ -86,7 +83,7 @@ def get_opposite_edge_pairs(edges: List[Gen_Edge], node_to_remove: Gen_Node):
     return (top_left, bottom_right), (bottom_left, top_right)
             
     
-def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
+def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
     print(node_to_remove.identifier)
     print(str(e1.node_a.identifier) + " " + str(e1.node_b.identifier))
     print(str(e2.node_a.identifier) + " " + str(e2.node_b.identifier))
