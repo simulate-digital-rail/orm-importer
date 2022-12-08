@@ -2,6 +2,8 @@ from typing import Tuple
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
+from planprogenerator import Generator, Config
+from railwayroutegenerator.generator import generate_from_topology
 from yaramo import model
 from yaramo.topology import Topology
 
@@ -80,7 +82,7 @@ class ORMConverter:
                 signal = model.Signal(
                     edge=edge,
                     distance_previous_node=dist_nodes(node_before, node),
-                    distance_side=dist_edge(node_before, node_after, node),
+                    side_distance=dist_edge(node_before, node_after, node),
                     direction=getSignalDirection(node.tags["railway:signal:direction"]),
                     function=get_signal_function(node) ,
                     kind=get_signal_kind(node),
@@ -104,7 +106,7 @@ class ORMConverter:
 
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
-            export_node = model.Node(name=node.id)
+            export_node = model.Node(name=node.id, geo_node=model.GeoNode(lat, lon))
             self.topology.add_node(export_node)
 
 
@@ -114,13 +116,13 @@ class ORMConverter:
                 next_top_node, path = self._get_next_top_node(node, edge, [])
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:
-                    node_a = next((n for n in self.topology.nodes.values() if n.name == node), None)
-                    node_b = next((n for n in self.topology.nodes.values() if n.name == next_top_node), None)
+                    node_a = next((n for n in self.topology.nodes.values() if n.name == node.id), None)
+                    node_b = next((n for n in self.topology.nodes.values() if n.name == next_top_node.id), None)
                     if (node_a and node_b) and not self.topology.get_edge_by_nodes(node_a, node_b):
                         current_edge = model.Edge(node_a, node_b)
                         self.topology.add_edge(current_edge)
                         self._add_geo_edges(path, node, next_top_node)
-                        self._add_signals(path, edge, node, next_top_node)
+                        self._add_signals(path, current_edge, node, next_top_node)
 
         count = 0
 
@@ -169,7 +171,9 @@ class ORMConverter:
             elif (top_edge[1].id, top_edge[0].id) in replaced_edges.keys():
                 export_top_edge = replaced_edges[(top_edge[1].id, top_edge[0].id)]
             else:
-                export_top_edge = get_export_edge(top_edge, self.topology.edges.values(), self.topology.nodes.values())
+                node_a = next((n for n in self.topology.nodes.values() if n.name == top_edge[0].id), None)
+                node_b = next((n for n in self.topology.nodes.values() if n.name == top_edge[1].id), None)
+                export_top_edge = self.topology.get_edge_by_nodes(node_a, node_b)
             geo_node = model.GeoNode(geo_edge[1].lat, geo_edge[1].lon)
             export_top_edge.intermediate_geo_nodes.append(geo_node)
 
@@ -178,4 +182,8 @@ class ORMConverter:
    
 if __name__ == '__main__':
     conv = ORMConverter()
-    conv.run("52.394471570989126 13.12194585800171 52.3955583542288 13.133854866027834 52.39436681938324 13.134176731109621 52.39326691251008 13.122761249542238")
+    topology = conv.run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767")
+    routes = generate_from_topology(topology)
+    print(routes)
+    pp = Generator().generate(topology.nodes.values(), topology.edges.values(), topology.signals.values(), Config(author_name="b", coord_representation="wgs84", organisation="b"), filename="out")
+
