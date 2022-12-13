@@ -167,7 +167,7 @@ class ORMImporter:
                 node_a = next((n for n in self.topology.nodes.values() if n.name == str(top_edge[0].id)), None)
                 node_b = next((n for n in self.topology.nodes.values() if n.name == str(top_edge[1].id)), None)
                 export_top_edge = self.topology.get_edge_by_nodes(node_a, node_b)
-            geo_node = model.GeoNode(geo_edge[1].lat, geo_edge[1].lon)
+            geo_node = model.Wgs84GeoNode(geo_edge[1].lat, geo_edge[1].lon)
             export_top_edge.intermediate_geo_nodes.append(geo_node)
 
         return self.topology
