@@ -86,7 +86,7 @@ class ORMConverter:
                     direction=getSignalDirection(node.tags["railway:signal:direction"]),
                     function=get_signal_function(node) ,
                     kind=get_signal_kind(node),
-                    name=node.tags.get("ref", node_id)
+                    name=str(node.tags.get("ref", node_id))[:6]
                 )
                 self.topology.add_signal(signal)
 

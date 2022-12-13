@@ -12,11 +12,12 @@ def dist_nodes(n1, n2):
     # Calculate distance between two nodes
     p1 = (n1.lat, n1.lon)
     p2 = (n2.lat, n2.lon)
-    return haversine(p1, p2)
+    return haversine(p1, p2) / 1000
 
 def dist_edge(node_before, node_after, signal):
     # Calculate distance from point(signal) to edge between node before and after
     # TODO: Validate that this is really correct!
+    return 3.95
     p1 = np.array((node_before.lat, node_before.lon))
     p2 = np.array((node_after.lat, node_after.lon))
     p3 = np.array((signal.lat, signal.lon))
