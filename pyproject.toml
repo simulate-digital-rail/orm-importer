@@ -27,7 +27,7 @@ pytest = "7.1.2"
 tomli = "2.0.1"
 zipp = "3.8.1"
 six = "^1.16.0"
-#lxml = "^4.9.0"
+lxml = "^4.9.0"
 haversine = "^2.7.0"
 yaramo = {git = "https://github.com/simulate-digital-rail/yaramo"}
 

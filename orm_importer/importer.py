@@ -12,8 +12,6 @@ class ORMImporter:
     def __init__(self):
         self.graph = None
         self.top_nodes : list[OverpyNode] = []
-        self.top_edges : list[tuple[OverpyNode, OverpyNode]] = []
-        self.geo_nodes : list[OverpyNode]= []
         self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
         self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
@@ -98,8 +96,6 @@ class ORMImporter:
             node = self.node_data[node_id]
             if is_end_node(node, self.graph) or is_switch(node):
                 self.top_nodes.append(node)
-            elif not is_signal(node):
-                self.geo_nodes.append(node)
 
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
@@ -123,44 +119,42 @@ class ORMImporter:
                         self._add_geo_edges(path, node, next_top_node)
                         self._add_signals(path, current_edge, node, next_top_node)
 
-        count = 0
 
+        # TODO: refactor this codeblock for yaramo
         replaced_edges = {}
-        replaced_n = {}
-
-        for node in self.topology.nodes.values():
-            # check for crossing-switches
-            if len(node.connected_nodes) == 4:
-                # identfy all 4 edges and merge
-                connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
-                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
-                new_edge_1 = merge_edges(*edge_pair_1, node)
-                new_edge_2 = merge_edges(*edge_pair_2, node)
-
-                # ToDo add to mapping which actual nodes were replaced
-                '''replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
-                replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
-                replaced_edges[(node.connected_nodes[2].identifier, node.identifier)] = new_edge
-                replaced_edges[(node.connected_nodes[3].identifier, node.identifier)] = new_edge'''
-                export_edges.append(new_edge_1)
-                export_edges.append(new_edge_2)
-                for e in connected_edges:
-                    export_edges.remove(e)
-                # create new top nodes - split newly created merged edges by inserting a top node each
-                # todo if we want an actual switch here
-                # delete crossing node
-                export_nodes.remove(node)
-
-            # # checking for switches with missing connection
-            # if len(node.connected_nodes) == 2:
-            #     connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
-            #     new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
-            #     export_edges.append(new_edge)
-            #     replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
-            #     replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
-            #     for e in connected_edges:
-            #         export_edges.remove(e)
-            #     export_nodes.remove(node)
+        # for node in self.topology.nodes.values():
+        #     # check for crossing-switches
+        #     if len(node.connected_nodes) == 4:
+        #         # identfy all 4 edges and merge
+        #         connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
+        #         edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
+        #         new_edge_1 = merge_edges(*edge_pair_1, node)
+        #         new_edge_2 = merge_edges(*edge_pair_2, node)
+        #
+        #         # ToDo add to mapping which actual nodes were replaced
+        #         '''replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
+        #         replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
+        #         replaced_edges[(node.connected_nodes[2].identifier, node.identifier)] = new_edge
+        #         replaced_edges[(node.connected_nodes[3].identifier, node.identifier)] = new_edge'''
+        #         export_edges.append(new_edge_1)
+        #         export_edges.append(new_edge_2)
+        #         for e in connected_edges:
+        #             export_edges.remove(e)
+        #         # create new top nodes - split newly created merged edges by inserting a top node each
+        #         # todo if we want an actual switch here
+        #         # delete crossing node
+        #         export_nodes.remove(node)
+        #
+        #     # # checking for switches with missing connection
+        #     # if len(node.connected_nodes) == 2:
+        #     #     connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
+        #     #     new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+        #     #     export_edges.append(new_edge)
+        #     #     replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
+        #     #     replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
+        #     #     for e in connected_edges:
+        #     #         export_edges.remove(e)
+        #     #     export_nodes.remove(node)
 
         for geo_edge in self.geo_edges:
             top_edge: Tuple[OverpyNode, OverpyNode] = geo_edge[2]
