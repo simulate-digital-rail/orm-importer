@@ -2,26 +2,28 @@ from platform import node
 from decimal import Decimal
 from typing import List
 import numpy as np
-from planprogenerator.model.node import Node as Gen_Node
-from planprogenerator.model.edge import Edge as Gen_Edge
 
 from overpy import Node
 from haversine import haversine
+from yaramo import model
 
 
 def dist_nodes(n1, n2):
     # Calculate distance between two nodes
     p1 = (n1.lat, n1.lon)
     p2 = (n2.lat, n2.lon)
-    return haversine(p1, p2)
+    return haversine(p1, p2) / 1000
+
 
 def dist_edge(node_before, node_after, signal):
     # Calculate distance from point(signal) to edge between node before and after
     # TODO: Validate that this is really correct!
+    return 3.95
     p1 = np.array((node_before.lat, node_before.lon))
     p2 = np.array((node_after.lat, node_after.lon))
     p3 = np.array((signal.lat, signal.lon))
     return np.abs(np.cross(p2-p1, p1-p3)) / Decimal(haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon)))
+
 
 def is_end_node(node, graph):
     # identify end nodes first, as a signal might also be an end node respective to the bounding box
@@ -31,14 +33,18 @@ def is_end_node(node, graph):
     if is_signal(node):
         return False
 
+
 def is_signal(node):
     return is_x(node, 'signal')
+
 
 def is_switch(node):
     return is_x(node, 'switch')
 
+
 def is_x(node, x: str):
     return 'railway' in node.tags.keys() and node.tags['railway'] == x
+
 
 def is_same_edge(e1: tuple, e2: tuple):
     if e1 == e2:
@@ -47,18 +53,6 @@ def is_same_edge(e1: tuple, e2: tuple):
         return True
     return False
 
-def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_nodes: "list[Gen_Node]"):
-    node_a: Gen_Node = [n for n in gen_nodes if n.identifier == edge[0].id]
-    node_b: Gen_Node = [n for n in gen_nodes if n.identifier == edge[1].id]
-    if not node_a or not node_b:
-        print(edge)
-        raise Exception("Edge that does not have top nodes, found")
-    node_a = node_a[0]
-    node_b = node_b[0]
-    for gen_edge in gen_edges:
-        if gen_edge.node_a == node_a and gen_edge.node_b == node_b:
-            return gen_edge
-    raise Exception("No generator edge found for converter edge")
 
 def getSignalDirection(direction: str):
     if direction == "forward":
@@ -67,7 +61,8 @@ def getSignalDirection(direction: str):
         return "gegen"
     raise Exception("Unknown signal direction encountered")
 
-def get_opposite_edge_pairs(edges: List[Gen_Edge], node_to_remove: Gen_Node):
+
+def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node):
     if len(edges) != 4:
         raise Exception("Opposite edge pairs can only be identified for a list of 4 edged. Only " +  str(len(edges)) + " edges given")
     node_map = []
@@ -84,9 +79,9 @@ def get_opposite_edge_pairs(edges: List[Gen_Edge], node_to_remove: Gen_Node):
     bottom_right = min(node_map[2:], key=lambda t: t[0].geo_node.y)[1]
 
     return (top_left, bottom_right), (bottom_left, top_right)
-            
-    
-def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
+
+
+def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
     print(node_to_remove.identifier)
     print(str(e1.node_a.identifier) + " " + str(e1.node_b.identifier))
     print(str(e2.node_a.identifier) + " " + str(e2.node_b.identifier))
@@ -97,6 +92,7 @@ def merge_edges(e1: Gen_Edge, e2: Gen_Edge, node_to_remove: Gen_Node):
     second_node.connected_nodes.remove(node_to_remove)
     second_node.connected_nodes.append(first_node)
     return Gen_Edge(first_node, second_node)
+
 
 def get_signal_function(signal: Node) -> str:
     if not signal.tags['railway'] == 'signal':
