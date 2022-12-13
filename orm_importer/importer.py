@@ -2,12 +2,10 @@ from typing import Tuple
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
-from planprogenerator import Generator, Config
-from railwayroutegenerator.generator import generate_from_topology
 from yaramo import model
 from yaramo.topology import Topology
 
-from orm_importer.utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
+from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
 
 
 class ORMImporter:
@@ -119,6 +117,8 @@ class ORMImporter:
                     node_b = next((n for n in self.topology.nodes.values() if n.name == str(next_top_node.id)), None)
                     if (node_a and node_b) and not self.topology.get_edge_by_nodes(node_a, node_b):
                         current_edge = model.Edge(node_a, node_b)
+                        node_a.connected_nodes.append(node_b)
+                        node_b.connected_nodes.append(node_a)
                         self.topology.add_edge(current_edge)
                         self._add_geo_edges(path, node, next_top_node)
                         self._add_signals(path, current_edge, node, next_top_node)
@@ -151,16 +151,16 @@ class ORMImporter:
                 # delete crossing node
                 export_nodes.remove(node)
 
-            # checking for switches with missing connection
-            if len(node.connected_nodes) == 2:
-                connected_edges = [e for e in export_edges if e.node_a == node or e.node_b == node]
-                new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
-                export_edges.append(new_edge)
-                replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
-                replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
-                for e in connected_edges:
-                    export_edges.remove(e)
-                export_nodes.remove(node)
+            # # checking for switches with missing connection
+            # if len(node.connected_nodes) == 2:
+            #     connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
+            #     new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+            #     export_edges.append(new_edge)
+            #     replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
+            #     replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
+            #     for e in connected_edges:
+            #         export_edges.remove(e)
+            #     export_nodes.remove(node)
 
         for geo_edge in self.geo_edges:
             top_edge: Tuple[OverpyNode, OverpyNode] = geo_edge[2]
@@ -177,12 +177,3 @@ class ORMImporter:
             export_top_edge.intermediate_geo_nodes.append(geo_node)
 
         return self.topology
-   
-   
-if __name__ == '__main__':
-    conv = ORMImporter()
-    topology = conv.run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767")
-    routes = generate_from_topology(topology)
-    print(routes)
-    pp = Generator().generate(topology.nodes.values(), topology.edges.values(), topology.signals.values(), Config(author_name="b", coord_representation="wgs84", organisation="b"), filename="out")
-
