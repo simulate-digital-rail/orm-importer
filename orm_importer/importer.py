@@ -7,7 +7,6 @@ from railwayroutegenerator.generator import generate_from_topology
 from yaramo import model
 from yaramo.topology import Topology
 
-from orm_importer.rail_types import Signal
 from orm_importer.utils import dist_edge, dist_nodes, get_export_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
 
 
@@ -18,7 +17,6 @@ class ORMImporter:
         self.top_edges : list[tuple[OverpyNode, OverpyNode]] = []
         self.geo_nodes : list[OverpyNode]= []
         self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
-        self.signals : list[Signal]= []
         self.node_data : dict[str, OverpyNode]= {}
         self.api = overpy.Overpass()
         self.topology = Topology()
