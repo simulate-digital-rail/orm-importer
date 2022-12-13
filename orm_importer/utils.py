@@ -49,8 +49,8 @@ def is_same_edge(e1: tuple, e2: tuple):
 
 
 def get_export_edge(edge: "tuple[Node, Node]", gen_edges: "list[Gen_Edge]", gen_nodes: "list[Gen_Node]"):
-    node_a = next((n for n in gen_nodes if n.name == edge[0].id), None)
-    node_b = next((n for n in gen_nodes if n.name == edge[1].id), None)
+    node_a = next((n for n in gen_nodes if n.name == str(edge[0].id)), None)
+    node_b = next((n for n in gen_nodes if n.name == str(edge[1].id)), None)
     if node_a is None or node_b is None:
         raise Exception("Edge without top nodes found")
     for gen_edge in gen_edges:
