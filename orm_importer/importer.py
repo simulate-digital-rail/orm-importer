@@ -15,7 +15,7 @@ class ORMImporter:
         self.top_nodes : list[OverpyNode] = []
         self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
         self.node_data : dict[str, OverpyNode]= {}
-        self.api = overpy.Overpass()
+        self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/api/interpreter")
         self.topology = Topology()
 
     def _get_track_objects(self, polygon: str):
@@ -65,7 +65,7 @@ class ORMImporter:
             node = self.node_data[node_id]   
             if idx == 0 or is_signal(node):
                 continue
-            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon))
+            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon).to_dbref())
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         for idx, node_id in enumerate(path):
@@ -98,7 +98,7 @@ class ORMImporter:
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
             export_node = model.Node(name=node.id)
-            export_node.geo_node = model.Wgs84GeoNode(lat, lon)
+            export_node.geo_node = model.Wgs84GeoNode(lat, lon).to_dbref()
             self.topology.add_node(export_node)
 
         # DFS-Like to create top and geo edges
