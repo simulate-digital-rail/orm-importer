@@ -15,7 +15,7 @@ class ORMImporter:
         self.top_nodes : list[OverpyNode] = []
         self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
         self.node_data : dict[str, OverpyNode]= {}
-        self.api = overpy.Overpass()
+        self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/")
         self.topology = Topology()
 
     def _get_track_objects(self, polygon: str):

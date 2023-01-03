@@ -13,7 +13,7 @@ def dist_nodes(n1, n2):
     # Calculate distance between two nodes
     p1 = (n1.lat, n1.lon)
     p2 = (n2.lat, n2.lon)
-    return haversine(p1, p2) / 1000
+    return haversine(p1, p2)
 
 
 def dist_edge(node_before, node_after, signal):
