@@ -1,8 +1,9 @@
-from typing import Tuple
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
 from yaramo import model
+from yaramo.edge import Edge
+from yaramo.geo_node import Wgs84GeoNode
 from yaramo.topology import Topology
 
 from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
@@ -59,15 +60,12 @@ class ORMImporter:
         next_edge = distinct_edges[0]
         return self._get_next_top_node(node_to, next_edge, path)
 
-    def _add_geo_edges(self, path, start_node, end_node):
-        previous_idx = 0
+    def _add_geo_nodes(self, path, top_edge: Edge):
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]   
             if idx == 0 or is_signal(node):
                 continue
-            previous_node = self.node_data[path[previous_idx]]
-            self.geo_edges.append((previous_node, node, (start_node, end_node)))
-            previous_idx = idx
+            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon))
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         for idx, node_id in enumerate(path):
@@ -75,7 +73,7 @@ class ORMImporter:
             if is_signal(node):
                 signal = model.Signal(
                     edge=edge,
-                    distance_previous_node=dist_nodes(node_before, node),
+                    distance_edge=dist_nodes(node_before, node),
                     side_distance=dist_edge(node_before, node_after, node),
                     direction=getSignalDirection(node.tags["railway:signal:direction"]),
                     function=get_signal_function(node) ,
@@ -99,9 +97,9 @@ class ORMImporter:
 
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
-            export_node = model.Node(name=node.id, geo_node=model.GeoNode(lat, lon))
+            export_node = model.Node(name=node.id)
+            export_node.geo_node = model.Wgs84GeoNode(lat, lon)
             self.topology.add_node(export_node)
-
 
         # DFS-Like to create top and geo edges
         for node in self.top_nodes:
@@ -116,58 +114,41 @@ class ORMImporter:
                         node_a.connected_nodes.append(node_b)
                         node_b.connected_nodes.append(node_a)
                         self.topology.add_edge(current_edge)
-                        self._add_geo_edges(path, node, next_top_node)
+                        self._add_geo_nodes(path, current_edge)
+                        current_edge.update_length()
                         self._add_signals(path, current_edge, node, next_top_node)
 
+        nodes_to_remove = []
+        for node in self.topology.nodes.values():
+            # check for crossing-switches
+            if len(node.connected_nodes) == 4:
+                # identfy all 4 edges
+                connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
 
-        # TODO: refactor this codeblock for yaramo
-        replaced_edges = {}
-        # for node in self.topology.nodes.values():
-        #     # check for crossing-switches
-        #     if len(node.connected_nodes) == 4:
-        #         # identfy all 4 edges and merge
-        #         connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
-        #         edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
-        #         new_edge_1 = merge_edges(*edge_pair_1, node)
-        #         new_edge_2 = merge_edges(*edge_pair_2, node)
-        #
-        #         # ToDo add to mapping which actual nodes were replaced
-        #         '''replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
-        #         replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
-        #         replaced_edges[(node.connected_nodes[2].identifier, node.identifier)] = new_edge
-        #         replaced_edges[(node.connected_nodes[3].identifier, node.identifier)] = new_edge'''
-        #         export_edges.append(new_edge_1)
-        #         export_edges.append(new_edge_2)
-        #         for e in connected_edges:
-        #             export_edges.remove(e)
-        #         # create new top nodes - split newly created merged edges by inserting a top node each
-        #         # todo if we want an actual switch here
-        #         # delete crossing node
-        #         export_nodes.remove(node)
-        #
-        #     # # checking for switches with missing connection
-        #     # if len(node.connected_nodes) == 2:
-        #     #     connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
-        #     #     new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
-        #     #     export_edges.append(new_edge)
-        #     #     replaced_edges[(node.connected_nodes[0].identifier, node.identifier)] = new_edge
-        #     #     replaced_edges[(node.connected_nodes[1].identifier, node.identifier)] = new_edge
-        #     #     for e in connected_edges:
-        #     #         export_edges.remove(e)
-        #     #     export_nodes.remove(node)
+                # merge edges, this means removing the switch and allowing only one path for each origin
+                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
+                new_edge_1 = merge_edges(*edge_pair_1, node)
+                new_edge_2 = merge_edges(*edge_pair_2, node)
+                self.topology.add_edge(new_edge_1)
+                self.topology.add_edge(new_edge_2)
 
-        for geo_edge in self.geo_edges:
-            top_edge: Tuple[OverpyNode, OverpyNode] = geo_edge[2]
-            # check if top_edge that the geo edge is associated with still exists, if not find the replaced edge
-            if (top_edge[0].id, top_edge[1].id) in replaced_edges.keys():
-                export_top_edge = replaced_edges[(top_edge[0].id, top_edge[1].id)]
-            elif (top_edge[1].id, top_edge[0].id) in replaced_edges.keys():
-                export_top_edge = replaced_edges[(top_edge[1].id, top_edge[0].id)]
-            else:
-                node_a = next((n for n in self.topology.nodes.values() if n.name == str(top_edge[0].id)), None)
-                node_b = next((n for n in self.topology.nodes.values() if n.name == str(top_edge[1].id)), None)
-                export_top_edge = self.topology.get_edge_by_nodes(node_a, node_b)
-            geo_node = model.Wgs84GeoNode(geo_edge[1].lat, geo_edge[1].lon)
-            export_top_edge.intermediate_geo_nodes.append(geo_node)
+                # delete old edges
+                for e in connected_edges:
+                    self.topology.edges.pop(e.uuid)
+
+                # delete crossing node
+                nodes_to_remove.append(node)
+
+            # checking for switches with missing connection
+            if len(node.connected_nodes) == 2:
+                connected_edges = [e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node]
+                new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+                self.topology.add_edge(new_edge)
+                for e in connected_edges:
+                    self.topology.edges.pop(e.uuid)
+                nodes_to_remove.append(node)
+
+        for node in nodes_to_remove:
+            self.topology.nodes.pop(node.uuid)
 
         return self.topology

@@ -6,6 +6,7 @@ import numpy as np
 from overpy import Node
 from haversine import haversine
 from yaramo import model
+from yaramo.edge import Edge
 
 
 def dist_nodes(n1, n2):
@@ -72,26 +73,30 @@ def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node)
         else:
             node_map.append((e.node_b, e))
 
-    node_map.sort(key=lambda t: t[0].geo_node.x)
-    top_left = max(node_map[:2], key=lambda t: t[0].geo_node.y)[1]
-    bottom_left = min(node_map[:2], key=lambda t: t[0].geo_node.y)[1]
-    top_right = max(node_map[2:], key=lambda t: t[0].geo_node.y)[1]
-    bottom_right = min(node_map[2:], key=lambda t: t[0].geo_node.y)[1]
+    node_map.sort(key=lambda t: t[0].geo_node.geo_point.x)
+    top_left = max(node_map[:2], key=lambda t: t[0].geo_node.geo_point.y)[1]
+    bottom_left = min(node_map[:2], key=lambda t: t[0].geo_node.geo_point.y)[1]
+    top_right = max(node_map[2:], key=lambda t: t[0].geo_node.geo_point.y)[1]
+    bottom_right = min(node_map[2:], key=lambda t: t[0].geo_node.geo_point.y)[1]
 
     return (top_left, bottom_right), (bottom_left, top_right)
 
 
 def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
-    print(node_to_remove.identifier)
-    print(str(e1.node_a.identifier) + " " + str(e1.node_b.identifier))
-    print(str(e2.node_a.identifier) + " " + str(e2.node_b.identifier))
+    print(node_to_remove.uuid)
+    print(str(e1.node_a.uuid) + " " + str(e1.node_b.uuid))
+    print(str(e2.node_a.uuid) + " " + str(e2.node_b.uuid))
     first_node = e1.node_a if e1.node_b == node_to_remove else e1.node_b
     second_node = e2.node_a if e2.node_b == node_to_remove else e2.node_b
     first_node.connected_nodes.remove(node_to_remove)
     first_node.connected_nodes.append(second_node)
     second_node.connected_nodes.remove(node_to_remove)
     second_node.connected_nodes.append(first_node)
-    return Gen_Edge(first_node, second_node)
+    edge = Edge(first_node, second_node)
+    edge.signals = e1.signals + e2.signals
+    edge.intermediate_geo_nodes = e1.intermediate_geo_nodes + e2.intermediate_geo_nodes
+    edge.update_length()
+    return edge
 
 
 def get_signal_function(signal: Node) -> str:
