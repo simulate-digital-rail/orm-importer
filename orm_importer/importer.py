@@ -153,7 +153,3 @@ class ORMImporter:
             self.topology.nodes.pop(node.uuid)
 
         return self.topology
-
-
-if __name__ == "__main__":
-    print(ORMImporter().run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767"))

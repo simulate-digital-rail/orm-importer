@@ -259,7 +259,7 @@ pyproj = "^3.4.1"
 type = "git"
 url = "https://github.com/simulate-digital-rail/yaramo"
 reference = "HEAD"
-resolved_reference = "a4474ac090c0497d695a86b14884013e598b8e4f"
+resolved_reference = "eba1e08c489d3c6b0c38f9b5ccf75de655bdd336"
 
 [[package]]
 name = "zipp"

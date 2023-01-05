@@ -5,7 +5,8 @@ import numpy as np
 from overpy import Node
 from haversine import haversine
 from yaramo import model
-from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, AdditionalSignal
+from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, AdditionalSignal, AdditionalSignalZs2v, \
+    AdditionalSignalZs3v
 from yaramo.edge import Edge
 
 
@@ -153,7 +154,7 @@ def get_zs_values(osm_tags: dict, key: str):
     return filter(None, values)
 
 
-def get_additional_signals(signal: Node) -> Optional[List[AdditionalSignal]]:
+def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
     additional_signals = []
     if is_signal_type(signal.tags, "railway:signal:route_distant", "DE-ESO:zs2v"):
         additional_signal = AdditionalSignalZs2v(
