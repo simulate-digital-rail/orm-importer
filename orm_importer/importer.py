@@ -6,7 +6,8 @@ from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
 from yaramo.topology import Topology
 
-from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, get_signal_function, get_signal_kind, getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges
+from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, get_signal_function, get_signal_kind, \
+    getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges, get_additional_signals
 
 
 class ORMImporter:
@@ -80,9 +81,9 @@ class ORMImporter:
                     kind=get_signal_kind(node),
                     name=str(node.tags.get("ref", node_id))
                 )
+                signal.additional_signals = get_additional_signals(node)
                 edge.signals.append(signal)
                 self.topology.add_signal(signal)
-
 
     def run(self, polygon):
         track_objects = self._get_track_objects(polygon)
@@ -152,3 +153,7 @@ class ORMImporter:
             self.topology.nodes.pop(node.uuid)
 
         return self.topology
+
+
+if __name__ == "__main__":
+    print(ORMImporter().run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767"))

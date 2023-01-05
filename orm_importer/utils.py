@@ -1,11 +1,11 @@
-from platform import node
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 import numpy as np
 
 from overpy import Node
 from haversine import haversine
 from yaramo import model
+from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, AdditionalSignal
 from yaramo.edge import Edge
 
 
@@ -139,3 +139,36 @@ def get_signal_kind(signal: Node) -> str:
         return 'andere'  # 'Mehrabschnittssperrsignal'
     else:
         return 'andere'
+
+
+def is_signal_type(tags: dict, signal_type: str, eso_value: str):
+    return signal_type in tags.keys() and tags[signal_type] == eso_value
+
+
+def get_zs_values(osm_tags: dict, key: str):
+    value_str = osm_tags.get(key, None)
+    if value_str is None or value_str == "none":
+        return []
+    values = value_str.split(";")
+    return filter(None, values)
+
+
+def get_additional_signals(signal: Node) -> Optional[List[AdditionalSignal]]:
+    additional_signals = []
+    if is_signal_type(signal.tags, "railway:signal:route_distant", "DE-ESO:zs2v"):
+        additional_signal = AdditionalSignalZs2v(
+            [AdditionalSignalZs2v.AdditionalSignalSymbolZs2v(s) for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")])
+        additional_signals.append(additional_signal)
+    if is_signal_type(signal.tags, "railway:signal:route", "DE-ESO:zs2"):
+        additional_signal = AdditionalSignalZs2(
+            [AdditionalSignalZs2.AdditionalSignalSymbolZs2(s) for s in get_zs_values(signal.tags, "railway:signal:route:states", )])
+        additional_signals.append(additional_signal)
+    if is_signal_type(signal.tags, "railway:signal:speed_limit_distant", "DE-ESO:zs3v"):
+        additional_signal = AdditionalSignalZs3v(
+            [AdditionalSignalZs3v.AdditionalSignalSymbolZs3v(0 if s == "off" else int(s)/10) for s in get_zs_values(signal.tags, "railway:signal:speed_limit_distant:speed", )])
+        additional_signals.append(additional_signal)
+    if is_signal_type(signal.tags, "railway:signal:speed_limit", "DE-ESO:zs3"):
+        additional_signal = AdditionalSignalZs3(
+            [AdditionalSignalZs3.AdditionalSignalSymbolZs3(0 if s == "off" else int(s)/10) for s in get_zs_values(signal.tags, "railway:signal:speed_limit:speed")])
+        additional_signals.append(additional_signal)
+    return additional_signals
