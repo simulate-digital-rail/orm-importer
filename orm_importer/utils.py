@@ -1,8 +1,9 @@
 from decimal import Decimal
 from typing import List, Optional
 import numpy as np
+import overpy.exception
 
-from overpy import Node
+from overpy import Node, Way
 from haversine import haversine
 from yaramo import model
 from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, AdditionalSignal, AdditionalSignalZs2v, \
@@ -56,12 +57,33 @@ def is_same_edge(e1: tuple, e2: tuple):
     return False
 
 
-def getSignalDirection(direction: str):
-    if direction == "forward":
+def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], node_data, path, signal_direction_tag: str):
+    edge_is_forward = None
+    for way in ways[edge.node_a.name]:
+        node_a = int(edge.node_a.name)
+        node_b = int(edge.node_b.name)
+        try:
+            if node_a in way._node_ids and node_b in way._node_ids:
+                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(node_b)
+                break
+            elif node_a in way._node_ids and path[0] in way._node_ids:
+                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(path[0])
+                break
+            else:
+                for i in range(len(path)-1):
+                    if path[i] in way._node_ids and path[i+1] in way._node_ids:
+                        edge_is_forward = way._node_ids.index(path[i]) < way._node_ids.index(path[i+1])
+                        break
+        except overpy.exception.DataIncomplete:
+            continue
+
+    if edge_is_forward is None:
+        raise Exception("Could not determine direction of edge")
+
+    if (edge_is_forward and signal_direction_tag == "forward") or (not edge_is_forward and signal_direction_tag == "backward"):
         return "in"
-    if direction == "backward":
+    else:
         return "gegen"
-    raise Exception("Unknown signal direction encountered")
 
 
 def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node):

@@ -1,6 +1,10 @@
+from collections import defaultdict
+from typing import List
+
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
+from planproexporter import Generator
 from yaramo import model
 from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
@@ -13,9 +17,9 @@ from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, g
 class ORMImporter:
     def __init__(self):
         self.graph = None
-        self.top_nodes : list[OverpyNode] = []
-        self.geo_edges : list[tuple[OverpyNode, OverpyNode, tuple[OverpyNode, OverpyNode]]]= [] #(node_a, node_b, top_edge)
-        self.node_data : dict[str, OverpyNode]= {}
+        self.top_nodes: list[OverpyNode] = []
+        self.node_data: dict[str, OverpyNode] = {}
+        self.ways: dict[str, List[overpy.Way]] = defaultdict(list)
         self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/api/interpreter")
         self.topology = Topology()
 
@@ -35,6 +39,7 @@ class ORMImporter:
                 try:
                     node = track_objects.get_node(node_id)
                     self.node_data[node_id] = node
+                    self.ways[str(node_id)].append(way)
                     G.add_node(node.id)
                     if previous_node:
                         G.add_edge(previous_node.id, node.id)
@@ -76,7 +81,7 @@ class ORMImporter:
                     edge=edge,
                     distance_edge=dist_nodes(node_before, node),
                     side_distance=dist_edge(node_before, node_after, node),
-                    direction=getSignalDirection(node.tags["railway:signal:direction"]),
+                    direction=getSignalDirection(edge, self.ways, self.node_data, path, node.tags["railway:signal:direction"]),
                     function=get_signal_function(node) ,
                     kind=get_signal_kind(node),
                     name=str(node.tags.get("ref", node_id))
@@ -84,6 +89,15 @@ class ORMImporter:
                 signal.additional_signals = get_additional_signals(node)
                 edge.signals.append(signal)
                 self.topology.add_signal(signal)
+
+    def _get_edge_speed(self, edge: Edge):
+        ways_a = set(self.ways[edge.node_a.name])
+        ways_b = set(self.ways[edge.node_b.name])
+        common_ways = ways_a.intersection(ways_b)
+        if len(common_ways) != 1:
+            return None
+        maxspeed = common_ways.pop().tags.get("maxspeed", None)
+        return int(maxspeed) if maxspeed else None
 
     def run(self, polygon):
         track_objects = self._get_track_objects(polygon)
@@ -117,6 +131,7 @@ class ORMImporter:
                         self.topology.add_edge(current_edge)
                         self._add_geo_nodes(path, current_edge)
                         current_edge.update_length()
+                        current_edge.maximum_speed = self._get_edge_speed(current_edge)
                         self._add_signals(path, current_edge, node, next_top_node)
 
         nodes_to_remove = []
@@ -152,4 +167,12 @@ class ORMImporter:
         for node in nodes_to_remove:
             self.topology.nodes.pop(node.uuid)
 
+        # use Zs3 signals to improve speed data
+        #for signal_id, signal in self.topology.signals:
+
         return self.topology
+
+
+if __name__ == "__main__":
+    topology = ORMImporter().run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767")
+    Generator().generate(topology, filename="out")
