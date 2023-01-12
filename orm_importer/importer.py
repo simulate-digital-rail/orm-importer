@@ -4,13 +4,13 @@ from typing import List
 from overpy import Node as OverpyNode
 import overpy
 import networkx as nx
-from planproexporter import Generator
 from yaramo import model
 from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
+from yaramo.geo_point import Wgs84GeoPoint
 from yaramo.topology import Topology
 
-from orm_importer.utils import dist_edge, dist_nodes, get_opposite_edge_pairs, get_signal_function, get_signal_kind, \
+from orm_importer.utils import dist_edge, get_opposite_edge_pairs, get_signal_function, get_signal_kind, \
     getSignalDirection, is_end_node, is_same_edge, is_signal, is_switch, merge_edges, get_additional_signals
 
 
@@ -77,12 +77,13 @@ class ORMImporter:
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]  
             if is_signal(node):
+                signal_geo_point = Wgs84GeoPoint(node.lat, node.lon).to_dbref()
                 signal = model.Signal(
                     edge=edge,
-                    distance_edge=dist_nodes(node_before, node),
+                    distance_edge=edge.node_a.geo_node.geo_point.get_distance_to_other_geo_point(signal_geo_point),
                     side_distance=dist_edge(node_before, node_after, node),
-                    direction=getSignalDirection(edge, self.ways, self.node_data, path, node.tags["railway:signal:direction"]),
-                    function=get_signal_function(node) ,
+                    direction=getSignalDirection(edge, self.ways, path, node.tags["railway:signal:direction"]),
+                    function=get_signal_function(node),
                     kind=get_signal_kind(node),
                     name=str(node.tags.get("ref", node_id))
                 )
@@ -167,12 +168,4 @@ class ORMImporter:
         for node in nodes_to_remove:
             self.topology.nodes.pop(node.uuid)
 
-        # use Zs3 signals to improve speed data
-        #for signal_id, signal in self.topology.signals:
-
         return self.topology
-
-
-if __name__ == "__main__":
-    topology = ORMImporter().run("52.39385615174401 13.049869537353517 52.3902158368756 13.049440383911135 52.38821222613622 13.073966503143312 52.392153883603726 13.074588775634767")
-    Generator().generate(topology, filename="out")

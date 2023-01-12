@@ -11,13 +11,6 @@ from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, A
 from yaramo.edge import Edge
 
 
-def dist_nodes(n1, n2):
-    # Calculate distance between two nodes
-    p1 = (n1.lat, n1.lon)
-    p2 = (n2.lat, n2.lon)
-    return haversine(p1, p2)
-
-
 def dist_edge(node_before, node_after, signal):
     # Calculate distance from point(signal) to edge between node before and after
     # TODO: Validate that this is really correct!
@@ -57,7 +50,7 @@ def is_same_edge(e1: tuple, e2: tuple):
     return False
 
 
-def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], node_data, path, signal_direction_tag: str):
+def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_direction_tag: str):
     edge_is_forward = None
     for way in ways[edge.node_a.name]:
         node_a = int(edge.node_a.name)
@@ -131,6 +124,8 @@ def get_signal_function(signal: Node) -> str:
             return 'Einfahr_Signal'
         elif signal.tags[tag] == 'exit':
             return 'Ausfahr_Signal'
+        elif signal.tags[tag] == 'block':
+            return 'Block_Signal'
         else:
             return 'andere'
     except StopIteration:
