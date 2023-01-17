@@ -76,7 +76,7 @@ class ORMImporter:
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]  
-            if is_signal(node):
+            if is_signal(node) and "railway:signal:direction" in node.tags:
                 signal_geo_point = Wgs84GeoPoint(node.lat, node.lon).to_dbref()
                 signal = model.Signal(
                     edge=edge,
