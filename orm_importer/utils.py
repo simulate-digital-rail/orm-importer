@@ -168,18 +168,19 @@ def get_zs_values(osm_tags: dict, key: str):
     if value_str is None or value_str == "none":
         return []
     values = value_str.split(";")
-    return filter(None, values)
+    invalid_values = [None, "", "?"]
+    return filter(lambda value: value not in invalid_values, values)
 
 
 def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
     additional_signals = []
     if is_signal_type(signal.tags, "railway:signal:route_distant", "DE-ESO:zs2v"):
         additional_signal = AdditionalSignalZs2v(
-            [AdditionalSignalZs2v.AdditionalSignalSymbolZs2v(s) for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")])
+            [AdditionalSignalZs2v.AdditionalSignalSymbolZs2v[s] for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")])
         additional_signals.append(additional_signal)
     if is_signal_type(signal.tags, "railway:signal:route", "DE-ESO:zs2"):
         additional_signal = AdditionalSignalZs2(
-            [AdditionalSignalZs2.AdditionalSignalSymbolZs2(s) for s in get_zs_values(signal.tags, "railway:signal:route:states", )])
+            [AdditionalSignalZs2.AdditionalSignalSymbolZs2[s] for s in get_zs_values(signal.tags, "railway:signal:route:states", )])
         additional_signals.append(additional_signal)
     if is_signal_type(signal.tags, "railway:signal:speed_limit_distant", "DE-ESO:zs3v"):
         additional_signal = AdditionalSignalZs3v(
