@@ -38,7 +38,9 @@ def is_end_node(node, graph):
 
 
 def is_signal(node):
-    return is_x(node, "signal")
+    # we cannot use railway=signal as a condition, as buffer stops violate this assumption.
+    # Instead, we check for the signal direction as we cannot create a signal without a direction anyway
+    return "railway:signal:direction" in node.tags.keys()
 
 
 def is_switch(node):
@@ -131,7 +133,7 @@ def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
 
 
 def get_signal_function(signal: Node) -> str:
-    if not signal.tags["railway"] == "signal":
+    if not "railway:signal:direction" in signal.tags.keys():
         raise Exception("Expected signal node")
     try:
         tag = next(t for t in signal.tags.keys() if t.endswith(":function"))
@@ -148,7 +150,7 @@ def get_signal_function(signal: Node) -> str:
 
 
 def get_signal_kind(signal: Node) -> str:
-    if not signal.tags["railway"] == "signal":
+    if not "railway:signal:direction" in signal.tags.keys():
         raise Exception("Expected signal node")
     # ORM Reference: https://wiki.openstreetmap.org/wiki/OpenRailwayMap/Tagging/Signal
     if "railway:signal:main" in signal.tags.keys():
@@ -157,7 +159,13 @@ def get_signal_kind(signal: Node) -> str:
         return "Vorsignal"
     elif "railway:signal:combined" in signal.tags.keys():
         return "Mehrabschnittssignal"
-    elif "railway:signal:shunting" in signal.tags.keys():
+    elif "railway:signal:shunting" in signal.tags.keys() or (
+        "railway:signal:minor" in signal.tags.keys()
+        and (
+            signal.tags["railway:signal:minor"] == "DE-ESO:sh0"
+            or signal.tags["railway:signal:minor"] == "DE-ESO:sh2"
+        )
+    ):
         return "Sperrsignal"
     elif (
         "railway:signal:main" in signal.tags.keys() and "railway:signal:minor" in signal.tags.keys()
