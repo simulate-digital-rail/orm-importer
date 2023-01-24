@@ -1,15 +1,18 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 import overpy.exception
 from haversine import haversine
 from overpy import Node, Way
 from yaramo import model
-from yaramo.additional_signal import (AdditionalSignal, AdditionalSignalZs2,
-                                      AdditionalSignalZs2v,
-                                      AdditionalSignalZs3,
-                                      AdditionalSignalZs3v)
+from yaramo.additional_signal import (
+    AdditionalSignal,
+    AdditionalSignalZs2,
+    AdditionalSignalZs2v,
+    AdditionalSignalZs3,
+    AdditionalSignalZs3v,
+)
 from yaramo.edge import Edge
 
 
@@ -54,30 +57,24 @@ def is_same_edge(e1: tuple, e2: tuple):
     return False
 
 
-def getSignalDirection(
-    edge: Edge, ways: dict[str, List[Way]], path, signal_direction_tag: str
-):
+def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_direction_tag: str):
     edge_is_forward = None
     for way in ways[edge.node_a.name]:
         node_a = int(edge.node_a.name)
         node_b = int(edge.node_b.name)
         try:
             if node_a in way._node_ids and node_b in way._node_ids:
-                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(
-                    node_b
-                )
+                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(node_b)
                 break
             elif node_a in way._node_ids and path[0] in way._node_ids:
-                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(
-                    path[0]
-                )
+                edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(path[0])
                 break
             else:
                 for i in range(len(path) - 1):
                     if path[i] in way._node_ids and path[i + 1] in way._node_ids:
-                        edge_is_forward = way._node_ids.index(
-                            path[i]
-                        ) < way._node_ids.index(path[i + 1])
+                        edge_is_forward = way._node_ids.index(path[i]) < way._node_ids.index(
+                            path[i + 1]
+                        )
                         break
         except overpy.exception.DataIncomplete:
             continue
@@ -163,8 +160,7 @@ def get_signal_kind(signal: Node) -> str:
     elif "railway:signal:shunting" in signal.tags.keys():
         return "Sperrsignal"
     elif (
-        "railway:signal:main" in signal.tags.keys()
-        and "railway:signal:minor" in signal.tags.keys()
+        "railway:signal:main" in signal.tags.keys() and "railway:signal:minor" in signal.tags.keys()
     ):
         return "Hauptsperrsignal"
     # Names in comment are not yet supported by PlanPro generator
@@ -202,9 +198,7 @@ def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
         additional_signal = AdditionalSignalZs2v(
             [
                 AdditionalSignalZs2v.AdditionalSignalSymbolZs2v[s]
-                for s in get_zs_values(
-                    signal.tags, "railway:signal:route_distant:states"
-                )
+                for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")
             ]
         )
         additional_signals.append(additional_signal)
@@ -222,9 +216,7 @@ def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
     if is_signal_type(signal.tags, "railway:signal:speed_limit_distant", "DE-ESO:zs3v"):
         additional_signal = AdditionalSignalZs3v(
             [
-                AdditionalSignalZs3v.AdditionalSignalSymbolZs3v(
-                    0 if s == "off" else int(s) / 10
-                )
+                AdditionalSignalZs3v.AdditionalSignalSymbolZs3v(0 if s == "off" else int(s) / 10)
                 for s in get_zs_values(
                     signal.tags,
                     "railway:signal:speed_limit_distant:speed",
@@ -235,9 +227,7 @@ def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
     if is_signal_type(signal.tags, "railway:signal:speed_limit", "DE-ESO:zs3"):
         additional_signal = AdditionalSignalZs3(
             [
-                AdditionalSignalZs3.AdditionalSignalSymbolZs3(
-                    0 if s == "off" else int(s) / 10
-                )
+                AdditionalSignalZs3.AdditionalSignalSymbolZs3(0 if s == "off" else int(s) / 10)
                 for s in get_zs_values(signal.tags, "railway:signal:speed_limit:speed")
             ]
         )

@@ -10,11 +10,19 @@ from yaramo.geo_node import Wgs84GeoNode
 from yaramo.geo_point import Wgs84GeoPoint
 from yaramo.topology import Topology
 
-from orm_importer.utils import (dist_edge, get_additional_signals,
-                                get_opposite_edge_pairs, get_signal_function,
-                                get_signal_kind, getSignalDirection,
-                                is_end_node, is_same_edge, is_signal,
-                                is_switch, merge_edges)
+from orm_importer.utils import (
+    dist_edge,
+    get_additional_signals,
+    get_opposite_edge_pairs,
+    get_signal_function,
+    get_signal_kind,
+    getSignalDirection,
+    is_end_node,
+    is_same_edge,
+    is_signal,
+    is_switch,
+    merge_edges,
+)
 
 
 class ORMImporter:
@@ -62,9 +70,7 @@ class ORMImporter:
         if self.graph.degree(node_to_id) == 0:
             return None, path
 
-        distinct_edges = [
-            e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)
-        ]
+        distinct_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
         if len(distinct_edges) != 1:
             raise Exception(
                 f"Node: {node_to_id}. \n Geo nodes should have only one other edge, otherwise we don't know where to go"
@@ -78,9 +84,7 @@ class ORMImporter:
             node = self.node_data[node_id]
             if idx == 0 or is_signal(node):
                 continue
-            top_edge.intermediate_geo_nodes.append(
-                Wgs84GeoNode(node.lat, node.lon).to_dbref()
-            )
+            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon).to_dbref())
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         for idx, node_id in enumerate(path):
@@ -137,11 +141,7 @@ class ORMImporter:
                 # Only add geo objects that are on the path between two top nodes
                 if next_top_node and next_top_node != node:
                     node_a = next(
-                        (
-                            n
-                            for n in self.topology.nodes.values()
-                            if n.name == str(node.id)
-                        ),
+                        (n for n in self.topology.nodes.values() if n.name == str(node.id)),
                         None,
                     )
                     node_b = next(
@@ -152,9 +152,7 @@ class ORMImporter:
                         ),
                         None,
                     )
-                    if (node_a and node_b) and not self.topology.get_edge_by_nodes(
-                        node_a, node_b
-                    ):
+                    if (node_a and node_b) and not self.topology.get_edge_by_nodes(node_a, node_b):
                         current_edge = model.Edge(node_a, node_b)
                         node_a.connected_nodes.append(node_b)
                         node_b.connected_nodes.append(node_a)
@@ -170,15 +168,11 @@ class ORMImporter:
             if len(node.connected_nodes) == 4:
                 # identfy all 4 edges
                 connected_edges = [
-                    e
-                    for e in self.topology.edges.values()
-                    if e.node_a == node or e.node_b == node
+                    e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node
                 ]
 
                 # merge edges, this means removing the switch and allowing only one path for each origin
-                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(
-                    connected_edges, node
-                )
+                edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
                 new_edge_1 = merge_edges(*edge_pair_1, node)
                 new_edge_2 = merge_edges(*edge_pair_2, node)
                 self.topology.add_edge(new_edge_1)
@@ -194,9 +188,7 @@ class ORMImporter:
             # checking for switches with missing connection
             if len(node.connected_nodes) == 2:
                 connected_edges = [
-                    e
-                    for e in self.topology.edges.values()
-                    if e.node_a == node or e.node_b == node
+                    e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node
                 ]
                 new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
                 self.topology.add_edge(new_edge)
