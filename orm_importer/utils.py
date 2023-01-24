@@ -1,18 +1,15 @@
 from decimal import Decimal
 from typing import List, Optional
+
 import numpy as np
 import overpy.exception
-
-from overpy import Node, Way
 from haversine import haversine
+from overpy import Node, Way
 from yaramo import model
-from yaramo.additional_signal import (
-    AdditionalSignalZs3,
-    AdditionalSignalZs2,
-    AdditionalSignal,
-    AdditionalSignalZs2v,
-    AdditionalSignalZs3v,
-)
+from yaramo.additional_signal import (AdditionalSignal, AdditionalSignalZs2,
+                                      AdditionalSignalZs2v,
+                                      AdditionalSignalZs3,
+                                      AdditionalSignalZs3v)
 from yaramo.edge import Edge
 
 

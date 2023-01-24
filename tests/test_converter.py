@@ -1,6 +1,8 @@
-from mock import patch
-from orm_importer.importer import ORMImporter
 import pickle
+
+from mock import patch
+
+from orm_importer.importer import ORMImporter
 
 
 @patch("orm_importer.importer.ORMImporter")

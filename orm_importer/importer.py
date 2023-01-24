@@ -1,28 +1,20 @@
 from collections import defaultdict
 from typing import List
 
-from overpy import Node as OverpyNode
-import overpy
 import networkx as nx
+import overpy
+from overpy import Node as OverpyNode
 from yaramo import model
 from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
 from yaramo.geo_point import Wgs84GeoPoint
 from yaramo.topology import Topology
 
-from orm_importer.utils import (
-    dist_edge,
-    get_opposite_edge_pairs,
-    get_signal_function,
-    get_signal_kind,
-    getSignalDirection,
-    is_end_node,
-    is_same_edge,
-    is_signal,
-    is_switch,
-    merge_edges,
-    get_additional_signals,
-)
+from orm_importer.utils import (dist_edge, get_additional_signals,
+                                get_opposite_edge_pairs, get_signal_function,
+                                get_signal_kind, getSignalDirection,
+                                is_end_node, is_same_edge, is_signal,
+                                is_switch, merge_edges)
 
 
 class ORMImporter:
