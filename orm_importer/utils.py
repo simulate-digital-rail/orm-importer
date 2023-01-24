@@ -1,13 +1,18 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
+
 import numpy as np
 import overpy.exception
-
-from overpy import Node, Way
 from haversine import haversine
+from overpy import Node, Way
 from yaramo import model
-from yaramo.additional_signal import AdditionalSignalZs3, AdditionalSignalZs2, AdditionalSignal, AdditionalSignalZs2v, \
-    AdditionalSignalZs3v
+from yaramo.additional_signal import (
+    AdditionalSignal,
+    AdditionalSignalZs2,
+    AdditionalSignalZs2v,
+    AdditionalSignalZs3,
+    AdditionalSignalZs3v,
+)
 from yaramo.edge import Edge
 
 
@@ -18,7 +23,9 @@ def dist_edge(node_before, node_after, signal):
     p1 = np.array((node_before.lat, node_before.lon))
     p2 = np.array((node_after.lat, node_after.lon))
     p3 = np.array((signal.lat, signal.lon))
-    return np.abs(np.cross(p2-p1, p1-p3)) / Decimal(haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon)))
+    return np.abs(np.cross(p2 - p1, p1 - p3)) / Decimal(
+        haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon))
+    )
 
 
 def is_end_node(node, graph):
@@ -31,15 +38,15 @@ def is_end_node(node, graph):
 
 
 def is_signal(node):
-    return is_x(node, 'signal')
+    return is_x(node, "signal")
 
 
 def is_switch(node):
-    return is_x(node, 'switch')
+    return is_x(node, "switch")
 
 
 def is_x(node, x: str):
-    return 'railway' in node.tags.keys() and node.tags['railway'] == x
+    return "railway" in node.tags.keys() and node.tags["railway"] == x
 
 
 def is_same_edge(e1: tuple, e2: tuple):
@@ -63,9 +70,11 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
                 edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(path[0])
                 break
             else:
-                for i in range(len(path)-1):
-                    if path[i] in way._node_ids and path[i+1] in way._node_ids:
-                        edge_is_forward = way._node_ids.index(path[i]) < way._node_ids.index(path[i+1])
+                for i in range(len(path) - 1):
+                    if path[i] in way._node_ids and path[i + 1] in way._node_ids:
+                        edge_is_forward = way._node_ids.index(path[i]) < way._node_ids.index(
+                            path[i + 1]
+                        )
                         break
         except overpy.exception.DataIncomplete:
             continue
@@ -73,7 +82,9 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
     if edge_is_forward is None:
         raise Exception("Could not determine direction of edge")
 
-    if (edge_is_forward and signal_direction_tag == "forward") or (not edge_is_forward and signal_direction_tag == "backward"):
+    if (edge_is_forward and signal_direction_tag == "forward") or (
+        not edge_is_forward and signal_direction_tag == "backward"
+    ):
         return "in"
     else:
         return "gegen"
@@ -81,7 +92,11 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
 
 def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node):
     if len(edges) != 4:
-        raise Exception("Opposite edge pairs can only be identified for a list of 4 edged. Only " +  str(len(edges)) + " edges given")
+        raise Exception(
+            "Opposite edge pairs can only be identified for a list of 4 edged. Only "
+            + str(len(edges))
+            + " edges given"
+        )
     node_map = []
     for e in edges:
         if e.node_a != node_to_remove:
@@ -116,47 +131,52 @@ def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
 
 
 def get_signal_function(signal: Node) -> str:
-    if not signal.tags['railway'] == 'signal':
-        raise Exception('Expected signal node')
+    if not signal.tags["railway"] == "signal":
+        raise Exception("Expected signal node")
     try:
-        tag = next(t for t in signal.tags.keys() if t.endswith(':function'))
-        if signal.tags[tag] == 'entry':
-            return 'Einfahr_Signal'
-        elif signal.tags[tag] == 'exit':
-            return 'Ausfahr_Signal'
-        elif signal.tags[tag] == 'block':
-            return 'Block_Signal'
+        tag = next(t for t in signal.tags.keys() if t.endswith(":function"))
+        if signal.tags[tag] == "entry":
+            return "Einfahr_Signal"
+        elif signal.tags[tag] == "exit":
+            return "Ausfahr_Signal"
+        elif signal.tags[tag] == "block":
+            return "Block_Signal"
         else:
-            return 'andere'
+            return "andere"
     except StopIteration:
-        return 'andere'
+        return "andere"
 
 
 def get_signal_kind(signal: Node) -> str:
-    if not signal.tags['railway'] == 'signal':
-        raise Exception('Expected signal node')
+    if not signal.tags["railway"] == "signal":
+        raise Exception("Expected signal node")
     # ORM Reference: https://wiki.openstreetmap.org/wiki/OpenRailwayMap/Tagging/Signal
-    if 'railway:signal:main' in signal.tags.keys():
-        return 'Hauptsignal'
-    elif 'railway:signal:distant' in signal.tags.keys():
-        return 'Vorsignal'
-    elif 'railway:signal:combined' in signal.tags.keys():
-        return 'Mehrabschnittssignal'
-    elif 'railway:signal:shunting' in signal.tags.keys():
-        return 'Sperrsignal'
-    elif 'railway:signal:main' in signal.tags.keys() and 'railway:signal:minor' in signal.tags.keys():
-        return 'Hauptsperrsignal'
+    if "railway:signal:main" in signal.tags.keys():
+        return "Hauptsignal"
+    elif "railway:signal:distant" in signal.tags.keys():
+        return "Vorsignal"
+    elif "railway:signal:combined" in signal.tags.keys():
+        return "Mehrabschnittssignal"
+    elif "railway:signal:shunting" in signal.tags.keys():
+        return "Sperrsignal"
+    elif (
+        "railway:signal:main" in signal.tags.keys() and "railway:signal:minor" in signal.tags.keys()
+    ):
+        return "Hauptsperrsignal"
     # Names in comment are not yet supported by PlanPro generator
-    elif 'railway:signal:main_repeated' in signal.tags.keys():
-        return 'andere'  # 'Vorsignalwiederholer'
-    elif 'railway:signal:minor' in signal.tags.keys():
-        return 'andere'  # 'Zugdeckungssignal'
-    elif 'railway:signal:crossing' in signal.tags.keys():
-        return 'andere'  # 'Überwachungssignal'
-    elif 'railway:signal:combined' in signal.tags.keys() and 'railway:signal:minor' in signal.tags.keys():
-        return 'andere'  # 'Mehrabschnittssperrsignal'
+    elif "railway:signal:main_repeated" in signal.tags.keys():
+        return "andere"  # 'Vorsignalwiederholer'
+    elif "railway:signal:minor" in signal.tags.keys():
+        return "andere"  # 'Zugdeckungssignal'
+    elif "railway:signal:crossing" in signal.tags.keys():
+        return "andere"  # 'Überwachungssignal'
+    elif (
+        "railway:signal:combined" in signal.tags.keys()
+        and "railway:signal:minor" in signal.tags.keys()
+    ):
+        return "andere"  # 'Mehrabschnittssperrsignal'
     else:
-        return 'andere'
+        return "andere"
 
 
 def is_signal_type(tags: dict, signal_type: str, eso_value: str):
@@ -176,18 +196,40 @@ def get_additional_signals(signal: Node) -> List[AdditionalSignal]:
     additional_signals = []
     if is_signal_type(signal.tags, "railway:signal:route_distant", "DE-ESO:zs2v"):
         additional_signal = AdditionalSignalZs2v(
-            [AdditionalSignalZs2v.AdditionalSignalSymbolZs2v[s] for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")])
+            [
+                AdditionalSignalZs2v.AdditionalSignalSymbolZs2v[s]
+                for s in get_zs_values(signal.tags, "railway:signal:route_distant:states")
+            ]
+        )
         additional_signals.append(additional_signal)
     if is_signal_type(signal.tags, "railway:signal:route", "DE-ESO:zs2"):
         additional_signal = AdditionalSignalZs2(
-            [AdditionalSignalZs2.AdditionalSignalSymbolZs2[s] for s in get_zs_values(signal.tags, "railway:signal:route:states", )])
+            [
+                AdditionalSignalZs2.AdditionalSignalSymbolZs2[s]
+                for s in get_zs_values(
+                    signal.tags,
+                    "railway:signal:route:states",
+                )
+            ]
+        )
         additional_signals.append(additional_signal)
     if is_signal_type(signal.tags, "railway:signal:speed_limit_distant", "DE-ESO:zs3v"):
         additional_signal = AdditionalSignalZs3v(
-            [AdditionalSignalZs3v.AdditionalSignalSymbolZs3v(0 if s == "off" else int(s)/10) for s in get_zs_values(signal.tags, "railway:signal:speed_limit_distant:speed", )])
+            [
+                AdditionalSignalZs3v.AdditionalSignalSymbolZs3v(0 if s == "off" else int(s) / 10)
+                for s in get_zs_values(
+                    signal.tags,
+                    "railway:signal:speed_limit_distant:speed",
+                )
+            ]
+        )
         additional_signals.append(additional_signal)
     if is_signal_type(signal.tags, "railway:signal:speed_limit", "DE-ESO:zs3"):
         additional_signal = AdditionalSignalZs3(
-            [AdditionalSignalZs3.AdditionalSignalSymbolZs3(0 if s == "off" else int(s)/10) for s in get_zs_values(signal.tags, "railway:signal:speed_limit:speed")])
+            [
+                AdditionalSignalZs3.AdditionalSignalSymbolZs3(0 if s == "off" else int(s) / 10)
+                for s in get_zs_values(signal.tags, "railway:signal:speed_limit:speed")
+            ]
+        )
         additional_signals.append(additional_signal)
     return additional_signals
