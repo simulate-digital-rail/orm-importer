@@ -516,8 +516,8 @@ pyproj = "^3.4.1"
 [package.source]
 type = "git"
 url = "https://github.com/simulate-digital-rail/yaramo"
-reference = "HEAD"
-resolved_reference = "5ddfb2f4290470a7d303481455a5b7dd7c342dfb"
+reference = "signal-state"
+resolved_reference = "68091426fb9b7b762025c485750427d0a610c22a"
 
 [[package]]
 name = "zipp"
@@ -534,7 +534,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7bf72c52018829d4c0103759786250a5bcaf8f565f8b9c275cf1ef016d274a37"
+content-hash = "1637897b4921afe95d68e0632980f00d1a0044a1b3ecdeb67ca51a9b5258ddb9"
 
 [metadata.files]
 astroid = [
