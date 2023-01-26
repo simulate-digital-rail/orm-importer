@@ -5,6 +5,7 @@ import numpy as np
 import overpy.exception
 from haversine import haversine
 from overpy import Node, Way
+from src.yaramo.yaramo.signal import SignalState
 from yaramo import model
 from yaramo.additional_signal import (
     AdditionalSignal,
@@ -90,6 +91,25 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
         return "in"
     else:
         return "gegen"
+
+
+def get_signal_states(signal_tags: dict):
+    # Sh0 is tagged as Hp0 in OSM since a few years, but not all tags have been replaced so we convert them
+    raw_states = []
+    raw_states += signal_tags.get("railway:signal:main:states", "").split(";")
+    raw_states += signal_tags.get("railway:signal:combined:states", "").split(";")
+    raw_states += (
+        signal_tags.get("railway:signal:minor:states", "").replace("sh0", "hp0").split(";")
+    )
+    raw_states.append(signal_tags.get("railway:signal:minor", "").replace("sh0", "hp0"))
+    states = set()
+    for raw_state in raw_states:
+        if raw_state.startswith("DE-ESO:"):
+            try:
+                states.add(SignalState[raw_state.split(":")[1]])
+            except KeyError:
+                continue
+    return states
 
 
 def get_opposite_edge_pairs(edges: List[model.Edge], node_to_remove: model.Node):
