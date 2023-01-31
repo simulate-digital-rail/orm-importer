@@ -104,7 +104,7 @@ class ORMImporter:
                     ),
                     function=get_signal_function(node),
                     kind=get_signal_kind(node),
-                    states=get_signal_states(node.tags),
+                    supported_states=get_signal_states(node.tags),
                     name=str(node.tags.get("ref", node_id)),
                 )
                 signal.additional_signals = get_additional_signals(node)
