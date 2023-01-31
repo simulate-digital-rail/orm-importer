@@ -5,7 +5,7 @@ import numpy as np
 import overpy.exception
 from haversine import haversine
 from overpy import Node, Way
-from src.yaramo.yaramo.signal import SignalState
+from yaramo.signal import SignalState
 from yaramo import model
 from yaramo.additional_signal import (
     AdditionalSignal,
