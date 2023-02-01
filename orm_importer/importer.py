@@ -36,7 +36,7 @@ class ORMImporter:
         self.topology = Topology()
 
     def _get_track_objects(self, polygon: str):
-        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
+        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}");out body;'
         return self._query_api(query)
 
     def _query_api(self, query):
