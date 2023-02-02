@@ -74,9 +74,17 @@ class ORMImporter:
 
         distinct_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
         if len(distinct_edges) != 1:
-            # This usually happens for railway crossings. Currently, we end the path here.
-            # That approach won't always work, but it is not trivial to find out where to continue.
-            return None, path
+            # This usually happens for railway crossings. We can try to find the correct edge by
+            # checking in which direction the way that we are on continues
+            ways_a = set(self.ways[str(node.id)])
+            ways_b = set(self.ways[str(node_to_id)])
+            common_ways = ways_a.intersection(ways_b)
+            if len(common_ways) == 1:
+                way = common_ways.pop()
+                for edge in distinct_edges:
+                    if edge[0] in way._node_ids and edge[1] in way._node_ids:
+                        return self._get_next_top_node(node_to, edge, path)
+            raise Exception(f"Could not determine next edge to follow for node {node_to_id}.")
 
         next_edge = distinct_edges[0]
         return self._get_next_top_node(node_to, next_edge, path)
@@ -193,6 +201,7 @@ class ORMImporter:
             # checking for switches with missing connection
             if len(node.connected_nodes) == 2:
                 # query overpass again for the next node on the way that is incomplete
+                # this happens when the third node is outside the bounding box
                 substitute_found = False
                 for way in self.ways[node.name]:
                     try:
@@ -214,7 +223,20 @@ class ORMImporter:
                                 self.topology.add_edge(new_edge)
                                 break
                 if not substitute_found:
-                    raise Exception(f"Could not find the missing third node for node {node.name}")
+                    # if no substitute was found, the third node seems to be inside the bounding box
+                    # this can happen when a node is connected to the same node twice (e.g. station on
+                    # lines with only one track). WARNING: this produced weird results in the past.
+                    # It should be okay to do it after the check above.
+                    connected_edges = [
+                        e
+                        for e in self.topology.edges.values()
+                        if e.node_a == node or e.node_b == node
+                    ]
+                    new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+                    self.topology.add_edge(new_edge)
+                    for e in connected_edges:
+                        self.topology.edges.pop(e.uuid)
+                    nodes_to_remove.append(node)
 
         for node in nodes_to_remove:
             self.topology.nodes.pop(node.uuid)
