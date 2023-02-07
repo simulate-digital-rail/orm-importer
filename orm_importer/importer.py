@@ -209,7 +209,12 @@ class ORMImporter:
                     except DataIncomplete:
                         nodes = way.get_nodes(resolve_missing=True)
                         for candidate in nodes:
-                            if candidate.id != int(node.name):
+                            # we are only interested in nodes outside the bounding box as every node
+                            # that has been previously known was already visited as part of the graph
+                            if (
+                                candidate.id != int(node.name)
+                                and candidate.id not in self.node_data.keys()
+                            ):
                                 substitute_found = True
                                 new_node = model.Node()
                                 new_node.geo_node = Wgs84GeoNode(
