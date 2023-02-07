@@ -219,8 +219,8 @@ def get_signal_classification_number(node: Node):
     ref = str(node.tags.get("ref", None))
     if result := re.findall(r"(\d{1,2})\s?[a-zA-Z]+\d*", ref):
         number = result[0]
-        return number if len(number) > 1 else f"0{number}"
-    return 60
+        return str(number) if len(number) > 1 else f"0{number}"
+    return "60"
 
 
 def is_signal_type(tags: dict, signal_type: str, eso_value: str):
