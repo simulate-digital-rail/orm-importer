@@ -4,6 +4,7 @@ from typing import List
 import networkx as nx
 import overpy
 from overpy import Node as OverpyNode
+from overpy.exception import DataIncomplete
 from yaramo import model
 from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
@@ -73,9 +74,17 @@ class ORMImporter:
 
         distinct_edges = [e for e in self.graph.edges(node_to_id) if not is_same_edge(e, edge)]
         if len(distinct_edges) != 1:
-            raise Exception(
-                f"Node: {node_to_id}. \n Geo nodes should have only one other edge, otherwise we don't know where to go"
-            )
+            # This usually happens for railway crossings. We can try to find the correct edge by
+            # checking in which direction the way that we are on continues
+            ways_a = set(self.ways[str(node.id)])
+            ways_b = set(self.ways[str(node_to_id)])
+            common_ways = ways_a.intersection(ways_b)
+            if len(common_ways) == 1:
+                way = common_ways.pop()
+                for edge in distinct_edges:
+                    if edge[0] in way._node_ids and edge[1] in way._node_ids:
+                        return self._get_next_top_node(node_to, edge, path)
+            raise Exception(f"Could not determine next edge to follow for node {node_to_id}.")
 
         next_edge = distinct_edges[0]
         return self._get_next_top_node(node_to, next_edge, path)
@@ -166,6 +175,7 @@ class ORMImporter:
                         self._add_signals(path, current_edge, node, next_top_node)
 
         nodes_to_remove = []
+        nodes_to_add = []
         for node in self.topology.nodes.values():
             # check for crossing-switches
             if len(node.connected_nodes) == 4:
@@ -190,16 +200,53 @@ class ORMImporter:
 
             # checking for switches with missing connection
             if len(node.connected_nodes) == 2:
-                connected_edges = [
-                    e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node
-                ]
-                new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
-                self.topology.add_edge(new_edge)
-                for e in connected_edges:
-                    self.topology.edges.pop(e.uuid)
-                nodes_to_remove.append(node)
+                # query overpass again for the next node on the way that is incomplete
+                # this happens when the third node is outside the bounding box
+                substitute_found = False
+                for way in self.ways[node.name]:
+                    try:
+                        way.get_nodes()
+                    except DataIncomplete:
+                        nodes = way.get_nodes(resolve_missing=True)
+                        for candidate in nodes:
+                            # we are only interested in nodes outside the bounding box as every node
+                            # that has been previously known was already visited as part of the graph
+                            if (
+                                candidate.id != int(node.name)
+                                and candidate.id not in self.node_data.keys()
+                            ):
+                                substitute_found = True
+                                new_node = model.Node()
+                                new_node.geo_node = Wgs84GeoNode(
+                                    candidate.lat, candidate.lon
+                                ).to_dbref()
+                                new_edge = Edge(node, new_node)
+                                new_edge.update_length()
+                                node.connected_nodes.append(new_node)
+                                new_node.connected_nodes.append(node)
+                                nodes_to_add.append(new_node)
+                                self.topology.add_edge(new_edge)
+                                break
+                if not substitute_found:
+                    # if no substitute was found, the third node seems to be inside the bounding box
+                    # this can happen when a node is connected to the same node twice (e.g. station on
+                    # lines with only one track). WARNING: this produced weird results in the past.
+                    # It should be okay to do it after the check above.
+                    connected_edges = [
+                        e
+                        for e in self.topology.edges.values()
+                        if e.node_a == node or e.node_b == node
+                    ]
+                    new_edge = merge_edges(connected_edges[0], connected_edges[1], node)
+                    self.topology.add_edge(new_edge)
+                    for e in connected_edges:
+                        self.topology.edges.pop(e.uuid)
+                    nodes_to_remove.append(node)
 
         for node in nodes_to_remove:
             self.topology.nodes.pop(node.uuid)
+
+        for node in nodes_to_add:
+            self.topology.add_node(node)
 
         return self.topology
