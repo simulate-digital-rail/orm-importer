@@ -15,8 +15,10 @@ from orm_importer.utils import (
     dist_edge,
     get_additional_signals,
     get_opposite_edge_pairs,
+    get_signal_classification_number,
     get_signal_function,
     get_signal_kind,
+    get_signal_name,
     get_signal_states,
     getSignalDirection,
     is_end_node,
@@ -33,6 +35,7 @@ class ORMImporter:
         self.top_nodes: list[OverpyNode] = []
         self.node_data: dict[str, OverpyNode] = {}
         self.ways: dict[str, List[overpy.Way]] = defaultdict(list)
+        self.paths: dict[str, List[List]] = defaultdict(list)
         self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/api/interpreter")
         self.topology = Topology()
 
@@ -114,7 +117,8 @@ class ORMImporter:
                     function=get_signal_function(node),
                     kind=get_signal_kind(node),
                     supported_states=get_signal_states(node.tags),
-                    name=str(node.tags.get("ref", node_id)),
+                    name=get_signal_name(node),
+                    classification_number=get_signal_classification_number(node),
                 )
                 signal.additional_signals = get_additional_signals(node)
                 edge.signals.append(signal)
@@ -128,6 +132,14 @@ class ORMImporter:
             return None
         maxspeed = common_ways.pop().tags.get("maxspeed", None)
         return int(maxspeed) if maxspeed else None
+
+    def _should_add_edge(self, node_a: model.Node, node_b: model.Node, path: list[int]):
+        edge_not_present = not self.topology.get_edge_by_nodes(node_a, node_b)
+        if edge_not_present:
+            return True
+        reversed_path = list(reversed(path))
+        present_paths = self.paths[(node_a, node_b)] + self.paths[(node_b, node_a)]
+        return path not in present_paths and reversed_path not in present_paths
 
     def run(self, polygon):
         track_objects = self._get_track_objects(polygon)
@@ -166,7 +178,8 @@ class ORMImporter:
                         ),
                         None,
                     )
-                    if (node_a and node_b) and not self.topology.get_edge_by_nodes(node_a, node_b):
+                    if node_a and node_b and self._should_add_edge(node_a, node_b, path):
+                        self.paths[(node_a, node_b)].append(path)
                         current_edge = model.Edge(node_a, node_b)
                         node_a.connected_nodes.append(node_b)
                         node_b.connected_nodes.append(node_a)

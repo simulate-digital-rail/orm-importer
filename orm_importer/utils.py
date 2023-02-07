@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from typing import List
 
@@ -5,7 +6,6 @@ import numpy as np
 import overpy.exception
 from haversine import haversine
 from overpy import Node, Way
-from yaramo.signal import SignalState
 from yaramo import model
 from yaramo.additional_signal import (
     AdditionalSignal,
@@ -15,6 +15,7 @@ from yaramo.additional_signal import (
     AdditionalSignalZs3v,
 )
 from yaramo.edge import Edge
+from yaramo.signal import SignalState
 
 
 def dist_edge(node_before, node_after, signal):
@@ -205,6 +206,21 @@ def get_signal_kind(signal: Node) -> str:
         return "andere"  # 'Mehrabschnittssperrsignal'
     else:
         return "andere"
+
+
+def get_signal_name(node: Node):
+    ref = str(node.tags.get("ref", node.id))
+    if result := re.findall(r"\d{1,2}\s?([a-zA-Z]+\d*)", ref):
+        return result[0]
+    return ref
+
+
+def get_signal_classification_number(node: Node):
+    ref = str(node.tags.get("ref", None))
+    if result := re.findall(r"(\d{1,2})\s?[a-zA-Z]+\d*", ref):
+        number = result[0]
+        return str(number) if len(number) > 1 else f"0{number}"
+    return "60"
 
 
 def is_signal_type(tags: dict, signal_type: str, eso_value: str):
