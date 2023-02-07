@@ -142,7 +142,9 @@ class ORMImporter:
 
         for node in self.top_nodes:
             lat, lon = node.lat, node.lon
-            export_node = model.Node(name=node.id)
+            export_node = model.Node(
+                name=node.id, turnout_side=node.tags.get("railway:turnout_side", None)
+            )
             export_node.geo_node = model.Wgs84GeoNode(lat, lon).to_dbref()
             self.topology.add_node(export_node)
 
