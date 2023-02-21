@@ -70,7 +70,7 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
             if node_a in way._node_ids and node_b in way._node_ids:
                 edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(node_b)
                 break
-            elif node_a in way._node_ids and path[0] in way._node_ids:
+            elif node_a in way._node_ids and len(path) > 0 and path[0] in way._node_ids:
                 edge_is_forward = way._node_ids.index(node_a) < way._node_ids.index(path[0])
                 break
             else:
