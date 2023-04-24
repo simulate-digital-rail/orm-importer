@@ -29,7 +29,7 @@ zipp = "3.8.1"
 six = "^1.16.0"
 lxml = "^4.9.0"
 haversine = "^2.7.0"
-yaramo = {git = "https://github.com/antonykamp/yaramo", branch="refactor/replace-connected-nodes-with-edges"}
+yaramo = {git = "https://github.com/bp2022-ap1/yaramo", branch="refactor/replace-connected-nodes-with-edges"}
 
 
 
