@@ -131,7 +131,8 @@ class ORMImporter:
         if len(common_ways) != 1:
             return None
         maxspeed = common_ways.pop().tags.get("maxspeed", None)
-        return int(maxspeed) if maxspeed else None
+        # The default 160 is arbitrary and set, so the following steps produce working output.
+        return int(maxspeed) if maxspeed else 160
 
     def _should_add_edge(self, node_a: model.Node, node_b: model.Node, path: list[int]):
         edge_not_present = not self.topology.get_edge_by_nodes(node_a, node_b)
