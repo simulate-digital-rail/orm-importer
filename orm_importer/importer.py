@@ -238,6 +238,7 @@ class ORMImporter:
                                     candidate.lat, candidate.lon
                                 ).to_dbref()
                                 new_edge = Edge(node, new_node)
+                                new_edge.maximum_speed = 160
                                 new_edge.update_length()
                                 node.connected_edges.append(new_edge)
                                 new_edge.connected_edges.append(new_edge)
