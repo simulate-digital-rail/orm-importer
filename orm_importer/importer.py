@@ -129,7 +129,8 @@ class ORMImporter:
         ways_b = set(self.ways[edge.node_b.name])
         common_ways = ways_a.intersection(ways_b)
         if len(common_ways) != 1:
-            return None
+            # The default 160 is arbitrary and set, so the following steps produce working output.
+            return 160
         maxspeed = common_ways.pop().tags.get("maxspeed", None)
         # The default 160 is arbitrary and set, so the following steps produce working output.
         return int(maxspeed) if maxspeed else 160
