@@ -145,6 +145,7 @@ def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
     first_node.remove_edge_to_node(node_to_remove)
     second_node.remove_edge_to_node(node_to_remove)
     edge = Edge(first_node, second_node)
+    edge.maximum_speed = min(e1.maximum_speed, e2.maximum_speed)
     first_node.connected_edges.append(edge)
     second_node.connected_edges.append(edge)
     edge.signals = e1.signals + e2.signals
