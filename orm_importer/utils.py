@@ -142,11 +142,12 @@ def merge_edges(e1: model.Edge, e2: model.Edge, node_to_remove: model.Node):
     print(str(e2.node_a.uuid) + " " + str(e2.node_b.uuid))
     first_node = e1.node_a if e1.node_b == node_to_remove else e1.node_b
     second_node = e2.node_a if e2.node_b == node_to_remove else e2.node_b
-    first_node.connected_nodes.remove(node_to_remove)
-    first_node.connected_nodes.append(second_node)
-    second_node.connected_nodes.remove(node_to_remove)
-    second_node.connected_nodes.append(first_node)
+    first_node.remove_edge_to_node(node_to_remove)
+    second_node.remove_edge_to_node(node_to_remove)
     edge = Edge(first_node, second_node)
+    edge.maximum_speed = min(e1.maximum_speed, e2.maximum_speed)
+    first_node.connected_edges.append(edge)
+    second_node.connected_edges.append(edge)
     edge.signals = e1.signals + e2.signals
     edge.intermediate_geo_nodes = e1.intermediate_geo_nodes + e2.intermediate_geo_nodes
     edge.update_length()
