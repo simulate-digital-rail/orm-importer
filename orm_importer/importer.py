@@ -241,7 +241,7 @@ class ORMImporter:
                                 new_edge.maximum_speed = 160
                                 new_edge.update_length()
                                 node.connected_edges.append(new_edge)
-                                new_edge.connected_edges.append(new_edge)
+                                new_node.connected_edges.append(new_edge)
                                 nodes_to_add.append(new_node)
                                 self.topology.add_edge(new_edge)
                                 break
