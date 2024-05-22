@@ -45,8 +45,8 @@ def is_signal(node):
     return "railway:signal:direction" in node.tags.keys()
 
 
-def is_switch(node):
-    return is_x(node, "switch")
+def is_switch(node, graph):
+    return is_x(node, "switch") and graph.degree(node.id) == 3
 
 
 def is_x(node, x: str):
