@@ -39,8 +39,12 @@ class ORMImporter:
         self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/api/interpreter")
         self.topology = Topology()
 
-    def _get_track_objects(self, polygon: str):
-        query = f'(way["railway"="rail"](poly: "{polygon}");node(w)(poly: "{polygon}"););out body;'
+    def _get_track_objects(self, polygon: str, railway_option_types: list[str]):
+        query_parts = ""
+        for type in railway_option_types:
+            query_parts = query_parts + f'way["railway"="{type}"](poly: "{polygon}");node(w)(poly: "{polygon}");'
+        query = f'({query_parts});out body;'
+        print(query)
         return self._query_api(query)
 
     def _query_api(self, query):
@@ -141,8 +145,8 @@ class ORMImporter:
         present_paths = self.paths[(node_a, node_b)] + self.paths[(node_b, node_a)]
         return path not in present_paths and reversed_path not in present_paths
 
-    def run(self, polygon):
-        track_objects = self._get_track_objects(polygon)
+    def run(self, polygon, railway_option_types):
+        track_objects = self._get_track_objects(polygon, railway_option_types)
         self.graph = self._build_graph(track_objects)
 
         # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
