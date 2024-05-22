@@ -149,7 +149,7 @@ class ORMImporter:
         # Only nodes with max 1 edge or that are a switch can be top nodes
         for node_id in self.graph.nodes:
             node = self.node_data[node_id]
-            if is_end_node(node, self.graph) or is_switch(node):
+            if is_end_node(node, self.graph) or is_switch(node, self.graph):
                 self.top_nodes.append(node)
 
         for node in self.top_nodes:
