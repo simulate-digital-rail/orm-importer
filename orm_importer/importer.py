@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 import networkx as nx
 import overpy
@@ -16,11 +16,11 @@ from orm_importer.utils import (
     get_additional_signals,
     get_opposite_edge_pairs,
     get_signal_classification_number,
+    get_signal_direction,
     get_signal_function,
     get_signal_kind,
     get_signal_name,
     get_signal_states,
-    get_signal_direction,
     is_end_node,
     is_same_edge,
     is_signal,
