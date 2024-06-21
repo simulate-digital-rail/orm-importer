@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List
+from typing import List, Optional, Any
 
 import networkx as nx
 import overpy
@@ -20,7 +20,7 @@ from orm_importer.utils import (
     get_signal_kind,
     get_signal_name,
     get_signal_states,
-    getSignalDirection,
+    get_signal_direction,
     is_end_node,
     is_same_edge,
     is_signal,
@@ -35,16 +35,16 @@ class ORMImporter:
         self.top_nodes: list[OverpyNode] = []
         self.node_data: dict[str, OverpyNode] = {}
         self.ways: dict[str, List[overpy.Way]] = defaultdict(list)
-        self.paths: dict[str, List[List]] = defaultdict(list)
+        self.paths: dict[tuple[Optional[Any], Optional[Any]], List[List]] = defaultdict(list)
         self.api = overpy.Overpass(url="https://osm.hpi.de/overpass/api/interpreter")
         self.topology = Topology()
 
     def _get_track_objects(self, polygon: str, railway_option_types: list[str]):
         query_parts = ""
-        for type in railway_option_types:
+        for _type in railway_option_types:
             query_parts = (
                 query_parts
-                + f'way["railway"="{type}"](poly: "{polygon}");node(w)(poly: "{polygon}");'
+                + f'way["railway"="{_type}"](poly: "{polygon}");node(w)(poly: "{polygon}");'
             )
         query = f"({query_parts});out body;"
         print(query)
@@ -55,7 +55,7 @@ class ORMImporter:
         return result
 
     def _build_graph(self, track_objects):
-        G = nx.Graph()
+        graph = nx.Graph()
         for way in track_objects.ways:
             previous_node = None
             for idx, node_id in enumerate(way._node_ids):
@@ -63,13 +63,13 @@ class ORMImporter:
                     node = track_objects.get_node(node_id)
                     self.node_data[node_id] = node
                     self.ways[str(node_id)].append(way)
-                    G.add_node(node.id)
+                    graph.add_node(node.id)
                     if previous_node:
-                        G.add_edge(previous_node.id, node.id)
+                        graph.add_edge(previous_node.id, node.id)
                     previous_node = node
                 except overpy.exception.DataIncomplete:
                     continue
-        return G
+        return graph
 
     def _get_next_top_node(self, node, edge: "tuple[str, str]", path):
         node_to_id = edge[1]
@@ -106,7 +106,7 @@ class ORMImporter:
                 continue
             top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon).to_dbref())
 
-    def _add_signals(self, path, edge: model.Edge, node_before, node_after):
+    def _add_signals(self, path, edge: model.Edge):
         # append node and next_tope_node to path as they could also be signals (e.g. buffer stop)
         for node_id in [int(edge.node_a.name), *path, int(edge.node_b.name)]:
             node = self.node_data[node_id]
@@ -117,8 +117,8 @@ class ORMImporter:
                     distance_edge=edge.node_a.geo_node.geo_point.get_distance_to_other_geo_point(
                         signal_geo_point
                     ),
-                    side_distance=dist_edge(node_before, node_after, node),
-                    direction=getSignalDirection(
+                    side_distance=dist_edge(),
+                    direction=get_signal_direction(
                         edge, self.ways, path, node.tags["railway:signal:direction"]
                     ),
                     function=get_signal_function(node),
@@ -137,8 +137,8 @@ class ORMImporter:
         common_ways = ways_a.intersection(ways_b)
         if len(common_ways) != 1:
             return None
-        maxspeed = common_ways.pop().tags.get("maxspeed", None)
-        return int(maxspeed) if maxspeed else None
+        max_speed = common_ways.pop().tags.get("maxspeed", None)
+        return int(max_speed) if max_speed else None
 
     def _should_add_edge(self, node_a: model.Node, node_b: model.Node, path: list[int]):
         edge_not_present = not self.topology.get_edge_by_nodes(node_a, node_b)
@@ -154,7 +154,8 @@ class ORMImporter:
         track_objects = self._get_track_objects(polygon, railway_option_types)
         self.graph = self._build_graph(track_objects)
 
-        # ToDo: Check whether all edges really link to each other in ORM or if there might be edges missing for nodes that are just a few cm from each other
+        # ToDo: Check whether all edges really link to each other in ORM or if there might be
+        #  edges missing for nodes that are just a few cm from each other
         # Only nodes with max 1 edge or that are a switch can be top nodes
         for node_id in self.graph.nodes:
             node = self.node_data[node_id]
@@ -196,7 +197,7 @@ class ORMImporter:
                         self._add_geo_nodes(path, current_edge)
                         current_edge.update_length()
                         current_edge.maximum_speed = self._get_edge_speed(current_edge)
-                        self._add_signals(path, current_edge, node, next_top_node)
+                        self._add_signals(path, current_edge)
 
         nodes_to_remove = []
         nodes_to_add = []
@@ -208,7 +209,8 @@ class ORMImporter:
                     e for e in self.topology.edges.values() if e.node_a == node or e.node_b == node
                 ]
 
-                # merge edges, this means removing the switch and allowing only one path for each origin
+                # merge edges, this means removing the switch and
+                # allowing only one path for each origin
                 edge_pair_1, edge_pair_2 = get_opposite_edge_pairs(connected_edges, node)
                 new_edge_1 = merge_edges(*edge_pair_1, node)
                 new_edge_2 = merge_edges(*edge_pair_2, node)
@@ -233,8 +235,10 @@ class ORMImporter:
                     except DataIncomplete:
                         nodes = way.get_nodes(resolve_missing=True)
                         for candidate in nodes:
-                            # we are only interested in nodes outside the bounding box as every node
-                            # that has been previously known was already visited as part of the graph
+                            # we are only interested in nodes outside the
+                            # bounding box as every node that has been
+                            # previously known was already visited as
+                            # part of the graph
                             if (
                                 candidate.id != int(node.name)
                                 and candidate.id not in self.node_data.keys()
@@ -253,9 +257,9 @@ class ORMImporter:
                                 break
                 if not substitute_found:
                     # if no substitute was found, the third node seems to be inside the bounding box
-                    # this can happen when a node is connected to the same node twice (e.g. station on
-                    # lines with only one track). WARNING: this produced weird results in the past.
-                    # It should be okay to do it after the check above.
+                    # this can happen when a node is connected to the same node twice (e.g.
+                    # station on lines with only one track). WARNING: this produced weird
+                    # results in the past. It should be okay to do it after the check above.
                     connected_edges = [
                         e
                         for e in self.topology.edges.values()

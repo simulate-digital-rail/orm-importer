@@ -1,10 +1,7 @@
 import re
-from decimal import Decimal
 from typing import List
 
-import numpy as np
 import overpy.exception
-from haversine import haversine
 from overpy import Node, Way
 from yaramo import model
 from yaramo.additional_signal import (
@@ -18,16 +15,9 @@ from yaramo.edge import Edge
 from yaramo.signal import SignalState
 
 
-def dist_edge(node_before, node_after, signal):
+def dist_edge():
     # Calculate distance from point(signal) to edge between node before and after
-    # TODO: Validate that this is really correct!
     return 3.95
-    p1 = np.array((node_before.lat, node_before.lon))
-    p2 = np.array((node_after.lat, node_after.lon))
-    p3 = np.array((signal.lat, signal.lon))
-    return np.abs(np.cross(p2 - p1, p1 - p3)) / Decimal(
-        haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon))
-    )
 
 
 def is_end_node(node, graph):
@@ -41,7 +31,8 @@ def is_end_node(node, graph):
 
 def is_signal(node):
     # we cannot use railway=signal as a condition, as buffer stops violate this assumption.
-    # Instead, we check for the signal direction as we cannot create a signal without a direction anyway
+    # Instead, we check for the signal direction as we cannot create a
+    # signal without a direction anyway
     return "railway:signal:direction" in node.tags.keys()
 
 
@@ -61,7 +52,7 @@ def is_same_edge(e1: tuple, e2: tuple):
     return False
 
 
-def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_direction_tag: str):
+def get_signal_direction(edge: Edge, ways: dict[str, List[Way]], path, signal_direction_tag: str):
     edge_is_forward = None
     for way in ways[edge.node_a.name]:
         node_a = int(edge.node_a.name)
@@ -90,12 +81,12 @@ def getSignalDirection(edge: Edge, ways: dict[str, List[Way]], path, signal_dire
         not edge_is_forward and signal_direction_tag == "backward"
     ):
         return "in"
-    else:
-        return "gegen"
+    return "gegen"
 
 
 def get_signal_states(signal_tags: dict):
-    # Sh0 is tagged as Hp0 in OSM since a few years, but not all tags have been replaced so we convert them
+    # Sh0 is tagged as Hp0 in OSM since a few years, but not all tags
+    # have been replaced so we convert them
     raw_states = []
     raw_states += signal_tags.get("railway:signal:main:states", "").split(";")
     raw_states += signal_tags.get("railway:signal:combined:states", "").split(";")
@@ -160,12 +151,11 @@ def get_signal_function(signal: Node) -> str:
         tag = next(t for t in signal.tags.keys() if t.endswith(":function"))
         if signal.tags[tag] == "entry":
             return "Einfahr_Signal"
-        elif signal.tags[tag] == "exit":
+        if signal.tags[tag] == "exit":
             return "Ausfahr_Signal"
-        elif signal.tags[tag] == "block":
+        if signal.tags[tag] == "block":
             return "Block_Signal"
-        else:
-            return "andere"
+        return "andere"
     except StopIteration:
         return "andere"
 
@@ -176,11 +166,11 @@ def get_signal_kind(signal: Node) -> str:
     # ORM Reference: https://wiki.openstreetmap.org/wiki/OpenRailwayMap/Tagging/Signal
     if "railway:signal:main" in signal.tags.keys():
         return "Hauptsignal"
-    elif "railway:signal:distant" in signal.tags.keys():
+    if "railway:signal:distant" in signal.tags.keys():
         return "Vorsignal"
-    elif "railway:signal:combined" in signal.tags.keys():
+    if "railway:signal:combined" in signal.tags.keys():
         return "Mehrabschnittssignal"
-    elif "railway:signal:shunting" in signal.tags.keys() or (
+    if "railway:signal:shunting" in signal.tags.keys() or (
         "railway:signal:minor" in signal.tags.keys()
         and (
             signal.tags["railway:signal:minor"] == "DE-ESO:sh0"
@@ -188,24 +178,21 @@ def get_signal_kind(signal: Node) -> str:
         )
     ):
         return "Sperrsignal"
-    elif (
-        "railway:signal:main" in signal.tags.keys() and "railway:signal:minor" in signal.tags.keys()
-    ):
+    if "railway:signal:main" in signal.tags.keys() and "railway:signal:minor" in signal.tags.keys():
         return "Hauptsperrsignal"
     # Names in comment are not yet supported by PlanPro generator
-    elif "railway:signal:main_repeated" in signal.tags.keys():
+    if "railway:signal:main_repeated" in signal.tags.keys():
         return "andere"  # 'Vorsignalwiederholer'
-    elif "railway:signal:minor" in signal.tags.keys():
+    if "railway:signal:minor" in signal.tags.keys():
         return "andere"  # 'Zugdeckungssignal'
-    elif "railway:signal:crossing" in signal.tags.keys():
+    if "railway:signal:crossing" in signal.tags.keys():
         return "andere"  # 'Überwachungssignal'
-    elif (
+    if (
         "railway:signal:combined" in signal.tags.keys()
         and "railway:signal:minor" in signal.tags.keys()
     ):
         return "andere"  # 'Mehrabschnittssperrsignal'
-    else:
-        return "andere"
+    return "andere"
 
 
 def get_signal_name(node: Node):
