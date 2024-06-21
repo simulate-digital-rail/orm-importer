@@ -20,4 +20,4 @@ def test_query_griebnitzsee(mock_converter):
 
     assert len(res.nodes) == 10
     assert len(res.edges) == 9
-    assert len(res.signals) == 9
+    assert len(res.signals) == 17

@@ -145,7 +145,9 @@ class ORMImporter:
         present_paths = self.paths[(node_a, node_b)] + self.paths[(node_b, node_a)]
         return path not in present_paths and reversed_path not in present_paths
 
-    def run(self, polygon, railway_option_types):
+    def run(self, polygon, railway_option_types: list[str] = None):
+        if railway_option_types is None:
+            railway_option_types = ["rail"]
         track_objects = self._get_track_objects(polygon, railway_option_types)
         self.graph = self._build_graph(track_objects)
 
