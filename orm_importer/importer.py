@@ -42,8 +42,11 @@ class ORMImporter:
     def _get_track_objects(self, polygon: str, railway_option_types: list[str]):
         query_parts = ""
         for type in railway_option_types:
-            query_parts = query_parts + f'way["railway"="{type}"](poly: "{polygon}");node(w)(poly: "{polygon}");'
-        query = f'({query_parts});out body;'
+            query_parts = (
+                query_parts
+                + f'way["railway"="{type}"](poly: "{polygon}");node(w)(poly: "{polygon}");'
+            )
+        query = f"({query_parts});out body;"
         print(query)
         return self._query_api(query)
 
