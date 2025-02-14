@@ -1,7 +1,10 @@
 import re
+from decimal import Decimal
 from typing import List
 
+import numpy as np
 import overpy.exception
+from haversine import haversine
 from overpy import Node, Way
 from yaramo import model
 from yaramo.additional_signal import (
@@ -13,9 +16,6 @@ from yaramo.additional_signal import (
 )
 from yaramo.edge import Edge
 from yaramo.signal import SignalState
-import numpy as np
-from decimal import Decimal
-from haversine import haversine
 
 
 def dist_edge(node_before, node_after, signal):
