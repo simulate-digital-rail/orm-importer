@@ -106,7 +106,7 @@ class ORMImporter:
                 continue
             top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon).to_dbref())
 
-    def _add_signals(self, path, edge: model.Edge):
+    def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         # append node and next_tope_node to path as they could also be signals (e.g. buffer stop)
         for node_id in [int(edge.node_a.name), *path, int(edge.node_b.name)]:
             node = self.node_data[node_id]
@@ -117,7 +117,7 @@ class ORMImporter:
                     distance_edge=edge.node_a.geo_node.geo_point.get_distance_to_other_geo_point(
                         signal_geo_point
                     ),
-                    side_distance=dist_edge(),
+                    side_distance=dist_edge(node_before, node_after, node),
                     direction=get_signal_direction(
                         edge, self.ways, path, node.tags["railway:signal:direction"]
                     ),
@@ -197,7 +197,7 @@ class ORMImporter:
                         self._add_geo_nodes(path, current_edge)
                         current_edge.update_length()
                         current_edge.maximum_speed = self._get_edge_speed(current_edge)
-                        self._add_signals(path, current_edge)
+                        self._add_signals(path, current_edge, node, next_top_node)
 
         nodes_to_remove = []
         nodes_to_add = []

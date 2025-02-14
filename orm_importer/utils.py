@@ -13,11 +13,20 @@ from yaramo.additional_signal import (
 )
 from yaramo.edge import Edge
 from yaramo.signal import SignalState
+import numpy as np
+from decimal import Decimal
+from haversine import haversine
 
 
-def dist_edge():
+def dist_edge(node_before, node_after, signal):
     # Calculate distance from point(signal) to edge between node before and after
-    return 3.95
+    # TODO: Validate that this is really correct!
+    p1 = np.array((node_before.lat, node_before.lon))
+    p2 = np.array((node_after.lat, node_after.lon))
+    p3 = np.array((signal.lat, signal.lon))
+    return np.abs(np.cross(p2 - p1, p1 - p3)) / Decimal(
+        haversine((node_before.lat, node_before.lon), (node_after.lat, node_after.lon))
+    )
 
 
 def is_end_node(node, graph):
