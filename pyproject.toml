@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "orm-importer"
-version = "2.0"
+version = "3.0"
 description = "This tool converts data from OpenRailwayMap into yaramo models."
 authors = ["OSM at HPI <arne.boockmeyer@hpi.de>"]
 license = "MIT"
@@ -16,7 +16,7 @@ iniconfig = "1.1.1"
 itsdangerous = "2.1.2"
 markupsafe = "2.1.1"
 mock = "4.0.3"
-networkx = "2.8.6"
+networkx = {extras = ["default"], version = "^3.4.2"}
 numpy = "^1.26.3"
 overpy = "0.6"
 packaging = "21.3"
@@ -27,9 +27,9 @@ pytest = "^8.0.0"
 tomli = "2.0.1"
 zipp = "3.8.1"
 six = "^1.16.0"
-lxml = "^4.9.0"
+lxml = "^5.3.1"
 haversine = "^2.7.0"
-yaramo = {git = "https://github.com/simulate-digital-rail/yaramo", tag = "v1.0"}
+yaramo = {git = "https://github.com/simulate-digital-rail/yaramo", branch = "yaramo2"}
 
 
 
