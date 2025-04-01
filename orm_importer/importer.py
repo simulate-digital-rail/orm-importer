@@ -8,7 +8,6 @@ from overpy.exception import DataIncomplete
 from yaramo import model
 from yaramo.edge import Edge
 from yaramo.geo_node import Wgs84GeoNode
-from yaramo.geo_point import Wgs84GeoPoint
 from yaramo.topology import Topology
 
 from orm_importer.utils import (
@@ -111,11 +110,11 @@ class ORMImporter:
         for node_id in [int(edge.node_a.name), *path, int(edge.node_b.name)]:
             node = self.node_data[node_id]
             if is_signal(node):
-                signal_geo_point = Wgs84GeoPoint(node.lat, node.lon).to_dbref()
+                signal_geo_node = Wgs84GeoNode(node.lat, node.lon).to_dbref()
                 signal = model.Signal(
                     edge=edge,
-                    distance_edge=edge.node_a.geo_node.geo_point.get_distance_to_other_geo_point(
-                        signal_geo_point
+                    distance_edge=edge.node_a.geo_node.get_distance_to_other_geo_node(
+                        signal_geo_node
                     ),
                     side_distance=dist_edge(node_before, node_after, node),
                     direction=get_signal_direction(
