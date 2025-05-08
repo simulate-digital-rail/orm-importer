@@ -103,14 +103,14 @@ class ORMImporter:
             node = self.node_data[node_id]
             if idx == 0 or is_signal(node):
                 continue
-            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon).to_dbref())
+            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon))
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         # append node and next_tope_node to path as they could also be signals (e.g. buffer stop)
         for node_id in [int(edge.node_a.name), *path, int(edge.node_b.name)]:
             node = self.node_data[node_id]
             if is_signal(node):
-                signal_geo_node = Wgs84GeoNode(node.lat, node.lon).to_dbref()
+                signal_geo_node = Wgs84GeoNode(node.lat, node.lon)
                 signal = model.Signal(
                     edge=edge,
                     distance_edge=edge.node_a.geo_node.get_distance_to_other_geo_node(
@@ -166,7 +166,7 @@ class ORMImporter:
             export_node = model.Node(
                 name=node.id, turnout_side=node.tags.get("railway:turnout_side", None)
             )
-            export_node.geo_node = model.Wgs84GeoNode(lat, lon).to_dbref()
+            export_node.geo_node = model.Wgs84GeoNode(lat, lon)
             self.topology.add_node(export_node)
 
         # DFS-Like to create top and geo edges
