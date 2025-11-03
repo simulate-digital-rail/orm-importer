@@ -4,7 +4,6 @@
 name = "astroid"
 version = "2.15.4"
 description = "An abstract syntax tree for Python with inference support."
-category = "dev"
 optional = false
 python-versions = ">=3.7.2"
 files = [
@@ -24,7 +23,6 @@ wrapt = [
 name = "attrs"
 version = "21.4.0"
 description = "Classes Without Boilerplate"
-category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
@@ -42,7 +40,6 @@ tests-no-zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy"
 name = "black"
 version = "23.3.0"
 description = "The uncompromising code formatter."
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -90,9 +87,8 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "certifi"
-version = "2022.12.7"
+version = "2025.1.31"
 description = "Python package for providing Mozilla's CA Bundle."
-category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -102,9 +98,8 @@ files = [
 
 [[package]]
 name = "cfgv"
-version = "3.3.1"
+version = "3.4.0"
 description = "Validate configuration and produce human readable error messages."
-category = "dev"
 optional = false
 python-versions = ">=3.6.1"
 files = [
@@ -116,7 +111,6 @@ files = [
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -131,7 +125,6 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
-category = "main"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 files = [
@@ -141,9 +134,8 @@ files = [
 
 [[package]]
 name = "dill"
-version = "0.3.6"
-description = "serialize all of python"
-category = "dev"
+version = "0.3.9"
+description = "serialize all of Python"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -153,12 +145,12 @@ files = [
 
 [package.extras]
 graph = ["objgraph (>=1.7.2)"]
+profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
 name = "distlib"
-version = "0.3.6"
+version = "0.3.9"
 description = "Distribution utilities"
-category = "dev"
 optional = false
 python-versions = "*"
 files = [
@@ -185,7 +177,6 @@ test = ["pytest (>=6)"]
 name = "filelock"
 version = "3.12.0"
 description = "A platform independent file lock."
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -201,7 +192,6 @@ testing = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "diff-cover (>=7.5)", "p
 name = "haversine"
 version = "2.8.0"
 description = "Calculate the distance between 2 points on Earth."
-category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
@@ -213,7 +203,6 @@ files = [
 name = "identify"
 version = "2.5.22"
 description = "File identification library for Python"
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -228,7 +217,6 @@ license = ["ukkonen"]
 name = "importlib-metadata"
 version = "4.12.0"
 description = "Read metadata from Python packages"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -248,7 +236,6 @@ testing = ["flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
-category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -260,7 +247,6 @@ files = [
 name = "isort"
 version = "5.12.0"
 description = "A Python utility / library to sort Python imports."
-category = "dev"
 optional = false
 python-versions = ">=3.8.0"
 files = [
@@ -278,7 +264,6 @@ requirements-deprecated-finder = ["pip-api", "pipreqs"]
 name = "itsdangerous"
 version = "2.1.2"
 description = "Safely pass data to untrusted environments and back."
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -288,9 +273,8 @@ files = [
 
 [[package]]
 name = "lazy-object-proxy"
-version = "1.9.0"
+version = "1.10.0"
 description = "A fast and thorough lazy object proxy."
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -334,9 +318,8 @@ files = [
 
 [[package]]
 name = "lxml"
-version = "4.9.2"
+version = "4.9.4"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
-category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*"
 files = [
@@ -423,13 +406,12 @@ files = [
 cssselect = ["cssselect (>=0.7)"]
 html5 = ["html5lib"]
 htmlsoup = ["BeautifulSoup4"]
-source = ["Cython (>=0.29.7)"]
+source = ["Cython (==0.29.37)"]
 
 [[package]]
 name = "markupsafe"
 version = "2.1.1"
 description = "Safely add untrusted strings to HTML/XML markup."
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -479,7 +461,6 @@ files = [
 name = "mccabe"
 version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
-category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -491,7 +472,6 @@ files = [
 name = "mock"
 version = "4.0.3"
 description = "Rolling backport of unittest.mock for all Pythons"
-category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -520,7 +500,6 @@ files = [
 name = "networkx"
 version = "2.8.6"
 description = "Python package for creating and manipulating graphs and networks"
-category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -537,9 +516,8 @@ test = ["codecov (>=2.1)", "pytest (>=7.1)", "pytest-cov (>=3.0)"]
 
 [[package]]
 name = "nodeenv"
-version = "1.7.0"
+version = "1.9.1"
 description = "Node.js virtual environment builder"
-category = "dev"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*"
 files = [
@@ -552,9 +530,8 @@ setuptools = "*"
 
 [[package]]
 name = "numpy"
-version = "1.23.5"
-description = "NumPy is the fundamental package for array computing with Python."
-category = "main"
+version = "1.26.4"
+description = "Fundamental package for array computing in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -592,7 +569,6 @@ files = [
 name = "overpy"
 version = "0.6"
 description = "Python Wrapper to access the OpenStreepMap Overpass API"
-category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -603,7 +579,6 @@ files = [
 name = "packaging"
 version = "22.0"
 description = "Core utilities for Python packages"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -615,7 +590,6 @@ files = [
 name = "pathspec"
 version = "0.11.1"
 description = "Utility library for gitignore style pattern matching of file paths."
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -641,9 +615,8 @@ test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.2.2)", "pytest-
 
 [[package]]
 name = "pluggy"
-version = "1.0.0"
+version = "1.5.0"
 description = "plugin and hook calling mechanisms for python"
-category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -659,7 +632,6 @@ testing = ["pytest", "pytest-benchmark"]
 name = "pre-commit"
 version = "3.2.2"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
-category = "dev"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -678,7 +650,6 @@ virtualenv = ">=20.10.0"
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
-category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
@@ -690,7 +661,6 @@ files = [
 name = "pylint"
 version = "2.17.2"
 description = "python code static checker"
-category = "dev"
 optional = false
 python-versions = ">=3.7.2"
 files = [
@@ -701,14 +671,10 @@ files = [
 [package.dependencies]
 astroid = ">=2.15.2,<=2.17.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
-dill = [
-    {version = ">=0.2", markers = "python_version < \"3.11\""},
-    {version = ">=0.3.6", markers = "python_version >= \"3.11\""},
-]
+dill = {version = ">=0.3.6", markers = "python_version >= \"3.11\""}
 isort = ">=4.2.5,<6"
 mccabe = ">=0.6,<0.8"
 platformdirs = ">=2.2.0"
-tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 tomlkit = ">=0.10.1"
 typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""}
 
@@ -720,7 +686,6 @@ testutils = ["gitpython (>3)"]
 name = "pyparsing"
 version = "3.0.9"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
-category = "main"
 optional = false
 python-versions = ">=3.6.8"
 files = [
@@ -735,7 +700,6 @@ diagrams = ["jinja2", "railroad-diagrams"]
 name = "pyproj"
 version = "3.5.0"
 description = "Python interface to PROJ (cartographic projections and coordinate transformations library)"
-category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -783,7 +747,6 @@ certifi = "*"
 name = "pytest"
 version = "7.3.1"
 description = "pytest: simple powerful testing with Python"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -806,7 +769,6 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -871,9 +833,8 @@ testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (
 
 [[package]]
 name = "six"
-version = "1.16.0"
+version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
-category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
@@ -885,7 +846,6 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -921,7 +881,6 @@ files = [
 name = "virtualenv"
 version = "20.22.0"
 description = "Virtual Python Environment builder"
-category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -942,7 +901,6 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 name = "wrapt"
 version = "1.15.0"
 description = "Module for decorators, wrappers and monkey patching."
-category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 files = [
@@ -1025,16 +983,16 @@ files = [
 
 [[package]]
 name = "yaramo"
-version = "0.1.0"
+version = "1.0"
 description = "yaramo is a railway model focusing on interoperability between different existing planning formats."
-category = "main"
 optional = false
 python-versions = "^3.8"
 files = []
 develop = false
 
 [package.dependencies]
-pyproj = "^3.4.1"
+pyproj = "^3.6.1"
+simplejson = "^3.19.2"
 
 [package.source]
 type = "git"
@@ -1046,7 +1004,6 @@ resolved_reference = "65c5a6a2e13007ea07ae0f7087840348303a1086"
 name = "zipp"
 version = "3.8.1"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [

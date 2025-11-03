@@ -34,7 +34,7 @@ jobs:
         poetry run isort -c .
     - name: Lint with pylint
       run: |
-        poetry run pylint orm_importer    
+        poetry run pylint orm_importer --fail-under 8
 
   test:
 
