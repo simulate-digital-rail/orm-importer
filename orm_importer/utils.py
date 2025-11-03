@@ -34,11 +34,15 @@ def is_end_node(node, graph):
     if graph.degree(node.id) == 1 or graph.degree(node.id) == 0:
         return True
 
-    if is_signal(node):
+    if is_signal(node, graph):
         return False
 
 
-def is_signal(node):
+def is_signal(node, graph):
+    # Exclude signals that also function as end nodes
+    if graph.degree(node.id) == 1 or graph.degree(node.id) == 0:
+        return False
+
     # we cannot use railway=signal as a condition, as buffer stops violate this assumption.
     # Instead, we check for the signal direction as we cannot create a
     # signal without a direction anyway
@@ -46,7 +50,7 @@ def is_signal(node):
 
 
 def is_switch(node, graph):
-    return is_x(node, "switch") and graph.degree(node.id) == 3
+    return graph.degree(node.id) == 3 # is_x(node, "switch") and
 
 
 def is_x(node, x: str):

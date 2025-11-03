@@ -93,6 +93,7 @@ class ORMImporter:
                 for edge in distinct_edges:
                     if edge[0] in way._node_ids and edge[1] in way._node_ids:
                         return self._get_next_top_node(node_to, edge, path)
+                raise Exception(f"{len(distinct_edges)}Could not determine next edge to follow for node {node_to_id}.")
             raise Exception(f"Could not determine next edge to follow for node {node_to_id}.")
 
         next_edge = distinct_edges[0]
@@ -101,16 +102,16 @@ class ORMImporter:
     def _add_geo_nodes(self, path, top_edge: Edge):
         for idx, node_id in enumerate(path):
             node = self.node_data[node_id]
-            if idx == 0 or is_signal(node):
+            if idx == 0 or is_signal(node, self.graph):
                 continue
-            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon))
+            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon, data_source="osm"))
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         # append node and next_tope_node to path as they could also be signals (e.g. buffer stop)
         for node_id in [int(edge.node_a.name), *path, int(edge.node_b.name)]:
             node = self.node_data[node_id]
-            if is_signal(node):
-                signal_geo_node = Wgs84GeoNode(node.lat, node.lon)
+            if is_signal(node, self.graph):
+                signal_geo_node = Wgs84GeoNode(node.lat, node.lon, data_source="osm")
                 signal = model.Signal(
                     edge=edge,
                     distance_edge=edge.node_a.geo_node.get_distance_to_other_geo_node(
@@ -166,7 +167,7 @@ class ORMImporter:
             export_node = model.Node(
                 name=node.id, turnout_side=node.tags.get("railway:turnout_side", None)
             )
-            export_node.geo_node = model.Wgs84GeoNode(lat, lon)
+            export_node.geo_node = model.Wgs84GeoNode(lat, lon, data_source="osm")
             self.topology.add_node(export_node)
 
         # DFS-Like to create top and geo edges
@@ -245,7 +246,7 @@ class ORMImporter:
                                 substitute_found = True
                                 new_node = model.Node()
                                 new_node.geo_node = Wgs84GeoNode(
-                                    candidate.lat, candidate.lon
+                                    candidate.lat, candidate.lon, data_source="osm"
                                 ).to_dbref()
                                 new_edge = Edge(node, new_node)
                                 new_edge.update_length()
