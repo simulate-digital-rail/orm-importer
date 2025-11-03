@@ -136,9 +136,11 @@ class ORMImporter:
         ways_b = set(self.ways[edge.node_b.name])
         common_ways = ways_a.intersection(ways_b)
         if len(common_ways) != 1:
-            return None
-        max_speed = common_ways.pop().tags.get("maxspeed", None)
-        return int(max_speed) if max_speed else None
+            # The default 160 is arbitrary and set, so the following steps produce working output.
+            return 160
+        maxspeed = common_ways.pop().tags.get("maxspeed", None)
+        # The default 160 is arbitrary and set, so the following steps produce working output.
+        return int(maxspeed) if maxspeed else 160
 
     def _should_add_edge(self, node_a: model.Node, node_b: model.Node, path: list[int]):
         edge_not_present = not self.topology.get_edge_by_nodes(node_a, node_b)
@@ -191,8 +193,8 @@ class ORMImporter:
                     if node_a and node_b and self._should_add_edge(node_a, node_b, path):
                         self.paths[(node_a, node_b)].append(path)
                         current_edge = model.Edge(node_a, node_b)
-                        node_a.connected_nodes.append(node_b)
-                        node_b.connected_nodes.append(node_a)
+                        node_a.connected_edges.append(current_edge)
+                        node_b.connected_edges.append(current_edge)
                         self.topology.add_edge(current_edge)
                         self._add_geo_nodes(path, current_edge)
                         current_edge.update_length()
@@ -249,9 +251,10 @@ class ORMImporter:
                                     candidate.lat, candidate.lon, data_source="osm"
                                 ).to_dbref()
                                 new_edge = Edge(node, new_node)
+                                new_edge.maximum_speed = 160
                                 new_edge.update_length()
-                                node.connected_nodes.append(new_node)
-                                new_node.connected_nodes.append(node)
+                                node.connected_edges.append(new_edge)
+                                new_node.connected_edges.append(new_edge)
                                 nodes_to_add.append(new_node)
                                 self.topology.add_edge(new_edge)
                                 break

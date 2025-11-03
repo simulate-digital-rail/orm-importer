@@ -19,7 +19,7 @@ mock = "4.0.3"
 networkx = {extras = ["default"], version = "^3.4.2"}
 numpy = "^1.26.3"
 overpy = "0.6"
-packaging = "21.3"
+packaging = "22.0"
 pluggy = "1.5.0"
 py = "1.11.0"
 pyparsing = "3.0.9"
@@ -34,7 +34,7 @@ yaramo = {git = "https://github.com/simulate-digital-rail/yaramo"}
 
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.12.0"
+black = "^23.1.0"
 pylint = "^2.15.10"
 pre-commit = "^3.0.0"
 
