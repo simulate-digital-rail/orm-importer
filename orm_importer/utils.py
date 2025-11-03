@@ -50,7 +50,7 @@ def is_signal(node, graph):
 
 
 def is_switch(node, graph):
-    return graph.degree(node.id) == 3 # is_x(node, "switch") and
+    return graph.degree(node.id) == 3  # is_x(node, "switch") and
 
 
 def is_x(node, x: str):

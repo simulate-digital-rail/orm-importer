@@ -93,7 +93,9 @@ class ORMImporter:
                 for edge in distinct_edges:
                     if edge[0] in way._node_ids and edge[1] in way._node_ids:
                         return self._get_next_top_node(node_to, edge, path)
-                raise Exception(f"{len(distinct_edges)}Could not determine next edge to follow for node {node_to_id}.")
+                raise Exception(
+                    f"{len(distinct_edges)}Could not determine next edge to follow for node {node_to_id}."
+                )
             raise Exception(f"Could not determine next edge to follow for node {node_to_id}.")
 
         next_edge = distinct_edges[0]
@@ -104,7 +106,9 @@ class ORMImporter:
             node = self.node_data[node_id]
             if idx == 0 or is_signal(node, self.graph):
                 continue
-            top_edge.intermediate_geo_nodes.append(Wgs84GeoNode(node.lat, node.lon, data_source="osm"))
+            top_edge.intermediate_geo_nodes.append(
+                Wgs84GeoNode(node.lat, node.lon, data_source="osm")
+            )
 
     def _add_signals(self, path, edge: model.Edge, node_before, node_after):
         # append node and next_tope_node to path as they could also be signals (e.g. buffer stop)
